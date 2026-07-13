@@ -50,6 +50,19 @@ class ResetHeslaControllerTest {
         verify(resetHeslaService).pozadejReset(org.mockito.ArgumentMatchers.eq("kdokoliv@example.com"), anyString());
     }
 
+    // Zaklad URL odkazu v emailu musi jit z konfigurace, ne z Host hlavicky -
+    // ta je plne pod kontrolou odesilatele pozadavku a da se snadno podvrhnout
+    // (viz ResetHeslaController).
+    @Test
+    void odeslatPouzijeNakonfigurovanouUrlIKdyzJePodvrzenaHostHlavicka() throws Exception {
+        mockMvc.perform(post("/zapomenute-heslo").with(csrf())
+                        .header("Host", "utocnik.example.com")
+                        .param("email", "kdokoliv@example.com"))
+                .andExpect(status().is3xxRedirection());
+
+        verify(resetHeslaService).pozadejReset("kdokoliv@example.com", "http://localhost:8080");
+    }
+
     @Test
     void formularNovehoHeslaProPlatnyTokenZobraziFormular() throws Exception {
         given(resetHeslaService.jeTokenPlatny("platny-token")).willReturn(true);
