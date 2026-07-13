@@ -27,7 +27,31 @@ stáhne/obsahuje sám. Ověříš to příkazem `java -version` v terminálu.
 > padá spring-boot-maven-plugin na chybě `ClassNotFoundException` kvůli
 > tomu, jak si interně sestavuje classpath.
 
-**Spuštění:**
+### Doporučeno: Windows .exe (bez psaní do konzole)
+
+Appku jde sestavit do samostatného Windows programu - spustí se pak
+dvojklikem jako běžná appka, žádnou Javu na cílovém počítači nepotřebuje
+(je zabalená uvnitř) a po startu si sama otevře prohlížeč na hlavní
+stránku. Sestavení proběhne jednou v terminálu (vyžaduje JDK 17+ jako
+výše), další spuštění už bez konzole:
+
+```powershell
+.\sestavit-exe.bat
+```
+
+Výsledek najdeš v `dist\Dokgen\Dokgen.exe` - stačí zkopírovat/přesunout
+kamkoliv (třeba zástupce na plochu), i s celou složkou `dist\Dokgen`
+vedle sebe. Appka si otevře i konzolové okno se svým logem (kvůli heslu
+níže) - to je normální, jen ho nezavírej, dokud appku používáš.
+
+Uživatelské jméno pro první přihlášení je **admin**, heslo appka vezme
+z proměnné prostředí `DOKGEN_HESLO`, nebo (pokud není nastavená) náhodně
+vygeneruje a vypíše do svého konzolového okna - hledej řádek "vygenerovala
+toto NÁHODNÉ jednorázové heslo" (víc v sekci Bezpečnost níže). Chceš-li
+si heslo nastavit sám předem, nastav proměnnou prostředí `DOKGEN_HESLO`
+před spuštěním `Dokgen.exe`.
+
+### Alternativa: spuštění přes konzoli (Windows/Linux/Mac)
 
 ```bash
 ./mvnw spring-boot:run        # Linux/Mac
@@ -49,24 +73,6 @@ $env:DOKGEN_HESLO='tajneheslo123'; .\mvnw.cmd spring-boot:run   # Windows PowerS
 ```
 
 Appku vypneš v terminálu klávesou `Ctrl+C`.
-
-### Spuštění bez konzole (Windows .exe)
-
-Kdo nechce nic psát do terminálu, může appku sestavit do samostatného
-Windows programu - spustí se dvojklikem jako běžná appka, žádnou Javu na
-cílovém počítači nepotřebuje (je zabalená uvnitř), a po startu si sama
-otevře prohlížeč na hlavní stránku. Sestavení (vyžaduje JDK 17+, stejné
-jako pro běžné spuštění výše):
-
-```powershell
-.\sestavit-exe.bat
-```
-
-Výsledek najdeš v `dist\Dokgen\Dokgen.exe` - stačí zkopírovat/přesunout
-kamkoliv (třeba na zástupce na ploše), i s celou složkou `dist\Dokgen`
-vedle sebe. Heslo pro prvního přihlášení funguje stejně jako výše
-(`DOKGEN_HESLO` v prostředí, jinak náhodně vygenerované do konzolového
-okna, které si program otevře na pozadí).
 
 ## Co to používá
 
