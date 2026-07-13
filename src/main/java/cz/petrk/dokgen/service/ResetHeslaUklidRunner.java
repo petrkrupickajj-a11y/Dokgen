@@ -7,6 +7,7 @@ import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Clock;
 import java.time.LocalDateTime;
@@ -34,12 +35,19 @@ public class ResetHeslaUklidRunner implements ApplicationRunner {
         this.hodiny = hodiny;
     }
 
+    // @Transactional je nutne primo na verejne volane metode (ne na privatnim
+    // uklid() volanem pres this - self-invokace by Spring @Transactional proxy
+    // obesla) - deleteByPouzitTrueOrVyprsiDneBefore je odvozeny "delete" dotaz
+    // (ne CrudRepository.delete(...), ktery uz transakci ma vestavenou), takze
+    // by bez vlastni transakce spadl na TransactionRequiredException.
     @Override
+    @Transactional
     public void run(ApplicationArguments args) {
         uklid();
     }
 
     @Scheduled(cron = "0 0 3 * * *")
+    @Transactional
     public void uklidNaplanovane() {
         uklid();
     }
