@@ -85,4 +85,41 @@ class UzivateleSeederTest {
         assertThat(zachyceny.getAllValues().get(0).getHeslo())
                 .isNotEqualTo(zachyceny.getAllValues().get(1).getHeslo());
     }
+
+    @Test
+    void seedovanyUcetJeRovnouAktivni() {
+        pridejUcet("admin@dokgen.local", "zadaneHeslo123");
+        given(uzivatelRepository.existsByEmail("admin@dokgen.local")).willReturn(false);
+
+        seeder.run(new DefaultApplicationArguments());
+
+        ArgumentCaptor<Uzivatel> zachyceny = ArgumentCaptor.forClass(Uzivatel.class);
+        verify(uzivatelRepository).save(zachyceny.capture());
+        assertThat(zachyceny.getValue().jeAktivni()).isTrue();
+    }
+
+    @Test
+    void existujiciUcetBezPriznakuAktivniVDatabaziDostaneDodatecneAktivni() {
+        // Simuluje ucet vytvoreny pred zavedenim schvalovani - Hibernate ddl-auto=update
+        // pro nej pridal sloupec "aktivni" jako null.
+        Uzivatel legacyUcet = new Uzivatel("stary-ucet@dokgen.local", "hash");
+        legacyUcet.setAktivni(null);
+        given(uzivatelRepository.findAll()).willReturn(java.util.List.of(legacyUcet));
+
+        seeder.run(new DefaultApplicationArguments());
+
+        assertThat(legacyUcet.jeAktivni()).isTrue();
+        verify(uzivatelRepository).save(legacyUcet);
+    }
+
+    @Test
+    void existujiciUcetSJizNastavenymAktivniSeNeprepisuje() {
+        Uzivatel neaktivniUcet = new Uzivatel("cekajici@example.com", "hash", false);
+        given(uzivatelRepository.findAll()).willReturn(java.util.List.of(neaktivniUcet));
+
+        seeder.run(new DefaultApplicationArguments());
+
+        verify(uzivatelRepository, never()).save(neaktivniUcet);
+        assertThat(neaktivniUcet.jeAktivni()).isFalse();
+    }
 }

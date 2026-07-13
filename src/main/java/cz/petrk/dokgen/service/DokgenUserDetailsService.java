@@ -18,7 +18,11 @@ import java.util.Collections;
  *
  * Kazdy ucet se navic ptá PrihlaseniOmezovac, jestli neni docasne zamceny
  * kvuli opakovanym neuspesnym pokusum - Spring Security pak samo odmitne
- * prihlaseni jeste pred kontrolou hesla.
+ * prihlaseni jeste pred kontrolou hesla. Stejne tak ucet z verejne registrace,
+ * ktery jeste neschvalil nikdo na /uzivatele (viz SpravaUctuService), dostane
+ * priznak disabled - Spring Security ho odmitne DisabledException driv, nez
+ * vubec zkusi heslo (SecurityConfig na to ma vlastni AuthenticationFailureHandler,
+ * aby appka ukazala srozumitelnou hlasku "ceka na schvaleni" mist obecne chyby).
  */
 @Service
 public class DokgenUserDetailsService implements UserDetailsService {
@@ -38,6 +42,7 @@ public class DokgenUserDetailsService implements UserDetailsService {
         return User.withUsername(uzivatel.getEmail())
                 .password(uzivatel.getHeslo())
                 .authorities(Collections.emptyList())
+                .disabled(!uzivatel.jeAktivni())
                 .accountLocked(prihlaseniOmezovac.jeZamceno(email))
                 .build();
     }

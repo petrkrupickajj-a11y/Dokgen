@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <title th:text="#{uzivatele.title}">Uživatelé</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/styles.css}">
+</head>
+<body class="w-820" th:attr="data-tlacitko-zrusit=#{spolecne.zrusit},data-tlacitko-potvrdit=#{spolecne.potvrdit}">
+    <a href="#hlavni-obsah" class="skip-link" th:text="#{spolecne.preskocit}">Přeskočit na obsah</a>
+    <nav>
+        <a href="/" th:text="#{nav.klienti}">Klienti</a>
+        <a href="/sablony" th:text="#{nav.sablony}">Šablony</a>
+        <a href="/historie" th:text="#{nav.historie}">Historie</a>
+        <a href="/nastaveni" th:text="#{nav.nastaveni}">Nastavení</a>
+        <a href="/uzivatele" class="aktivni" th:text="#{nav.uzivatele}">Uživatelé</a>
+        <form th:action="@{/logout}" method="post" style="display:inline" class="form-odhlasit" th:attr="data-potvrzeni=#{nav.odhlasit.confirm}">
+            <button type="submit" class="nav-odhlasit" th:text="#{nav.odhlasit}">Odhlásit se</button>
+        </form>
+        <div class="jazyky">
+            <a href="#" data-lang="cs" th:classappend="${#locale.language == 'cs'} ? ' aktivni-jazyk'">CS</a>
+            <a href="#" data-lang="en" th:classappend="${#locale.language == 'en'} ? ' aktivni-jazyk'">EN</a>
+            <a href="#" data-lang="de" th:classappend="${#locale.language == 'de'} ? ' aktivni-jazyk'">DE</a>
+        </div>
+    </nav>
+
+    <h1 id="hlavni-obsah" th:text="#{uzivatele.h1}">Uživatelé</h1>
+    <p class="podnadpis" th:text="#{uzivatele.podnadpis}">Nové účty ze stránky Vytvořit účet čekají na schválení, než se s nimi bude dát přihlásit.</p>
+
+    <div class="panel panel-tabulka">
+        <div class="chybovy-box" role="alert" th:if="${chyba}" th:text="${chyba}"></div>
+
+        <h2 th:text="#{uzivatele.cekajici.nadpis}">Čekají na schválení</h2>
+        <table th:if="${!cekajici.isEmpty()}">
+            <tr>
+                <th scope="col" th:text="#{pole.email}">Email</th>
+                <th scope="col" th:text="#{uzivatele.th.vytvoreno}">Vytvořeno</th>
+                <th scope="col" th:text="#{uzivatele.th.akce}">Akce</th>
+            </tr>
+            <tr th:each="u : ${cekajici}">
+                <td th:text="${u.email}"></td>
+                <td th:text="${#temporals.format(u.vytvorenoDne, 'dd.MM.yyyy HH:mm')}"></td>
+                <td>
+                    <form th:action="@{/uzivatele/{id}/schvalit(id=${u.id})}" method="post" style="display:inline">
+                        <button type="submit" th:text="#{uzivatele.schvalit}">Schválit</button>
+                    </form>
+                    <form th:action="@{/uzivatele/{id}/zamitnout(id=${u.id})}" method="post" style="display:inline"
+                          th:attr="data-potvrzeni=#{uzivatele.zamitnout.confirm(${u.email})}">
+                        <button type="submit" class="smazat" th:text="#{uzivatele.zamitnout}">Zamítnout</button>
+                    </form>
+                </td>
+            </tr>
+        </table>
+        <p class="prazdno" th:if="${cekajici.isEmpty()}" th:text="#{uzivatele.zadny_cekajici}">Žádné žádosti nečekají na schválení.</p>
+
+        <h2 th:text="#{uzivatele.aktivni.nadpis}">Aktivní účty</h2>
+        <table th:if="${!aktivni.isEmpty()}">
+            <tr>
+                <th scope="col" th:text="#{pole.email}">Email</th>
+                <th scope="col" th:text="#{uzivatele.th.vytvoreno}">Vytvořeno</th>
+            </tr>
+            <tr th:each="u : ${aktivni}">
+                <td th:text="${u.email}"></td>
+                <td th:text="${#temporals.format(u.vytvorenoDne, 'dd.MM.yyyy HH:mm')}"></td>
+            </tr>
+        </table>
+    </div>
+
+    <button type="button" class="napoveda-tlacitko" aria-expanded="false" aria-controls="napoveda-panel" th:aria-label="#{spolecne.napoveda.label}">?</button>
+    <div id="napoveda-panel" class="napoveda-panel" hidden>
+        <h3 th:text="#{spolecne.napoveda.nadpis}">Jak to tady funguje</h3>
+        <p th:text="#{uzivatele.napoveda.text}">Kdokoli se může sám zaregistrovat na stránce Vytvořit účet, ale dokud jeho žádost někdo tady neschválí, přihlásit se nemůže. Zamítnutí žádost rovnou smaže.</p>
+        <button type="button" class="zavrit" th:text="#{spolecne.zavrit}">Zavřít</button>
+    </div>
+    <script th:src="@{/napoveda.js}"></script>
+    <script th:src="@{/jazyky.js}"></script>
+    <script th:src="@{/potvrzeni.js}"></script>
+</body>
+</html>

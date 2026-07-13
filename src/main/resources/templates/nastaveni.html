@@ -15,6 +15,7 @@
         <a href="/sablony" th:text="#{nav.sablony}">Šablony</a>
         <a href="/historie" th:text="#{nav.historie}">Historie</a>
         <a href="/nastaveni" class="aktivni" th:text="#{nav.nastaveni}">Nastavení</a>
+        <a href="/uzivatele" th:text="#{nav.uzivatele}">Uživatelé</a>
         <form th:action="@{/logout}" method="post" style="display:inline" class="form-odhlasit" th:attr="data-potvrzeni=#{nav.odhlasit.confirm}">
             <button type="submit" class="nav-odhlasit" th:text="#{nav.odhlasit}">Odhlásit se</button>
         </form>

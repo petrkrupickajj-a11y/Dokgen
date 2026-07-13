@@ -25,6 +25,11 @@ import java.util.UUID;
  * heslo a jednou ho vypise do logu - stejny princip jako vestaveny
  * "Using generated security password" u Spring Security, jen na urovni
  * nasich vlastnich uctu.
+ *
+ * Zaroven pri kazdem startu doplni priznak "aktivni" uctum, ktere v databazi
+ * existuji z doby pred zavedenim schvalovani novych uctu (sloupec u nich
+ * zustal po Hibernate ddl-auto=update prazdny/null) - dostanou true, aby je
+ * zavedeni schvalovani nikoho nevymklo z appky, kterou uz pouziva.
  */
 @Component
 public class UzivateleSeeder implements ApplicationRunner {
@@ -45,6 +50,8 @@ public class UzivateleSeeder implements ApplicationRunner {
 
     @Override
     public void run(ApplicationArguments args) {
+        doplnChybejiciAktivni();
+
         for (UzivateleProperties.Ucet ucet : uzivateleProperties.getUzivatele()) {
             if (uzivatelRepository.existsByEmail(ucet.getEmail())) {
                 continue;
@@ -67,6 +74,15 @@ public class UzivateleSeeder implements ApplicationRunner {
             }
 
             uzivatelRepository.save(new Uzivatel(ucet.getEmail(), passwordEncoder.encode(heslo)));
+        }
+    }
+
+    private void doplnChybejiciAktivni() {
+        for (Uzivatel uzivatel : uzivatelRepository.findAll()) {
+            if (uzivatel.getAktivni() == null) {
+                uzivatel.setAktivni(true);
+                uzivatelRepository.save(uzivatel);
+            }
         }
     }
 }

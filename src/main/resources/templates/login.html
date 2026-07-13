@@ -19,6 +19,7 @@
 
     <div class="panel">
         <div class="chybovy-box" id="login-chyba" role="alert" th:if="${param.error}" th:text="#{login.chyba}">Neplatné uživatelské jméno nebo heslo.</div>
+        <div class="chybovy-box" role="alert" th:if="${param.cekaNaSchvaleni}" th:text="#{login.ceka_na_schvaleni}">Účet zatím čeká na schválení.</div>
         <div class="info-box" role="status" th:if="${param.odhlaseno}" th:text="#{login.odhlaseno}">Byl jsi úspěšně odhlášen.</div>
         <div class="info-box" role="status" th:if="${param.emailZmenen}" th:text="#{login.email_zmenen}">Email byl změněn. Přihlas se prosím znovu.</div>
         <div class="info-box" role="status" th:if="${param.registrovano}" th:text="#{login.registrovano}">Účet byl vytvořen, teď se můžeš přihlásit.</div>
