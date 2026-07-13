@@ -37,7 +37,7 @@ public class RegistraceService {
         if (email == null || email.isBlank()) {
             throw new IllegalArgumentException(zprava("chyba.registrace.email_povinny"));
         }
-        String ocistenyEmail = email.trim();
+        String ocistenyEmail = EmailValidace.normalizuj(email);
         if (!EmailValidace.jePlatny(ocistenyEmail)) {
             throw new IllegalArgumentException(zprava("chyba.registrace.email_format"));
         }

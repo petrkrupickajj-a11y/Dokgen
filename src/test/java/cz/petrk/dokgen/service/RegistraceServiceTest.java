@@ -84,6 +84,19 @@ class RegistraceServiceTest {
     }
 
     @Test
+    void zaregistrujPrevedeEmailNaMalaPismena() {
+        given(uzivatelRepository.existsByEmail("novak@example.com")).willReturn(false);
+        given(passwordEncoder.encode(any())).willReturn("hash");
+
+        service.zaregistruj("Novak@Example.COM", "tajneheslo123", "tajneheslo123");
+
+        ArgumentCaptor<Uzivatel> zachyceny = ArgumentCaptor.forClass(Uzivatel.class);
+        verify(uzivatelRepository).save(zachyceny.capture());
+        assertThat(zachyceny.getValue().getEmail()).isEqualTo("novak@example.com");
+        verify(uzivatelRepository).existsByEmail("novak@example.com");
+    }
+
+    @Test
     void zaregistrujSNeshodujicimiSeHesyVyhodiChybu() {
         assertThatThrownBy(() -> service.zaregistruj("novak@example.com", "heslo1234", "jineheslo9"))
                 .isInstanceOf(IllegalArgumentException.class)

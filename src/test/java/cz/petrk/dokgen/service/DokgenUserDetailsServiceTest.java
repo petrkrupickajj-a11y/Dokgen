@@ -13,6 +13,7 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.verify;
 
 class DokgenUserDetailsServiceTest {
 
@@ -67,6 +68,17 @@ class DokgenUserDetailsServiceTest {
         UserDetails detail = service.loadUserByUsername("admin@dokgen.local");
 
         assertThat(detail.isAccountNonLocked()).isFalse();
+    }
+
+    @Test
+    void prihlaseniSJinouVelikostiPismenNajdeStejnyUcet() {
+        given(uzivatelRepository.findByEmail("admin@dokgen.local")).willReturn(Optional.of(new Uzivatel("admin@dokgen.local", "$2a$hash")));
+        given(prihlaseniOmezovac.jeZamceno("admin@dokgen.local")).willReturn(false);
+
+        UserDetails detail = service.loadUserByUsername("  Admin@Dokgen.Local  ");
+
+        assertThat(detail.getUsername()).isEqualTo("admin@dokgen.local");
+        verify(prihlaseniOmezovac).jeZamceno("admin@dokgen.local");
     }
 
     @Test

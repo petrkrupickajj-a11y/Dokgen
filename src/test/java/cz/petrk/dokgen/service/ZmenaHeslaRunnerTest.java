@@ -69,6 +69,18 @@ class ZmenaHeslaRunnerTest {
     }
 
     @Test
+    void prevedeEmailNaMalaPismenaPredHledanim() {
+        Uzivatel existujici = new Uzivatel("admin@dokgen.local", "staryHash");
+        given(uzivatelRepository.findByEmail("admin@dokgen.local")).willReturn(Optional.of(existujici));
+        given(passwordEncoder.encode("noveheslo")).willReturn("novyHash");
+
+        Integer kod = runner.zpracujVolbu(new DefaultApplicationArguments("--zmenit-heslo=Admin@Dokgen.Local:noveheslo"));
+
+        assertThat(kod).isEqualTo(0);
+        verify(uzivatelRepository).findByEmail("admin@dokgen.local");
+    }
+
+    @Test
     void chybejiciOddelovacVraciChybovyKodANicNeuklada() {
         Integer kod = runner.zpracujVolbu(new DefaultApplicationArguments("--zmenit-heslo=novakbezhesla"));
 

@@ -2,6 +2,7 @@ package cz.petrk.dokgen.service;
 
 import cz.petrk.dokgen.entity.Uzivatel;
 import cz.petrk.dokgen.repository.UzivatelRepository;
+import cz.petrk.dokgen.util.EmailValidace;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -37,13 +38,14 @@ public class DokgenUserDetailsService implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
-        Uzivatel uzivatel = uzivatelRepository.findByEmail(email)
+        String normalizovanyEmail = EmailValidace.normalizuj(email);
+        Uzivatel uzivatel = uzivatelRepository.findByEmail(normalizovanyEmail)
                 .orElseThrow(() -> new UsernameNotFoundException("Uživatel \"" + email + "\" neexistuje"));
         return User.withUsername(uzivatel.getEmail())
                 .password(uzivatel.getHeslo())
                 .authorities(Collections.emptyList())
                 .disabled(!uzivatel.jeAktivni())
-                .accountLocked(prihlaseniOmezovac.jeZamceno(email))
+                .accountLocked(prihlaseniOmezovac.jeZamceno(normalizovanyEmail))
                 .build();
     }
 }

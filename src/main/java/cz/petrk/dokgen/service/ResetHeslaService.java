@@ -4,6 +4,7 @@ import cz.petrk.dokgen.entity.ResetHesla;
 import cz.petrk.dokgen.entity.Uzivatel;
 import cz.petrk.dokgen.repository.ResetHeslaRepository;
 import cz.petrk.dokgen.repository.UzivatelRepository;
+import cz.petrk.dokgen.util.EmailValidace;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.MessageSource;
@@ -71,7 +72,7 @@ public class ResetHeslaService {
         if (email == null || email.isBlank()) {
             return;
         }
-        uzivatelRepository.findByEmail(email.trim()).ifPresent(uzivatel -> {
+        uzivatelRepository.findByEmail(EmailValidace.normalizuj(email)).ifPresent(uzivatel -> {
             String token = vygenerujToken();
             resetHeslaRepository.save(new ResetHesla(uzivatel, hash(token), LocalDateTime.now(hodiny).plus(PLATNOST)));
 

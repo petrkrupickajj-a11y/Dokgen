@@ -2,6 +2,7 @@ package cz.petrk.dokgen.service;
 
 import cz.petrk.dokgen.entity.Uzivatel;
 import cz.petrk.dokgen.repository.UzivatelRepository;
+import cz.petrk.dokgen.util.EmailValidace;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.SpringApplication;
@@ -66,7 +67,7 @@ public class ZmenaHeslaRunner implements ApplicationRunner {
             return 1;
         }
 
-        String email = hodnota.substring(0, oddelovac);
+        String email = EmailValidace.normalizuj(hodnota.substring(0, oddelovac));
         String noveHeslo = hodnota.substring(oddelovac + 1);
         String hash = passwordEncoder.encode(noveHeslo);
 

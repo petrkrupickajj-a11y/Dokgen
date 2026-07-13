@@ -1,11 +1,11 @@
 package cz.petrk.dokgen.service;
 
+import cz.petrk.dokgen.util.EmailValidace;
 import org.springframework.stereotype.Component;
 
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -37,12 +37,12 @@ public class PrihlaseniOmezovac {
     }
 
     public boolean jeZamceno(String email) {
-        Zaznam zaznam = zaznamy.get(normalizuj(email));
+        Zaznam zaznam = zaznamy.get(EmailValidace.normalizuj(email));
         return zaznam != null && zaznam.zamcenoDo != null && Instant.now(hodiny).isBefore(zaznam.zamcenoDo);
     }
 
     public void zaznamenejNeuspech(String email) {
-        zaznamy.compute(normalizuj(email), (klic, zaznam) -> {
+        zaznamy.compute(EmailValidace.normalizuj(email), (klic, zaznam) -> {
             Zaznam aktualni = zaznam == null ? new Zaznam() : zaznam;
             aktualni.pocetNeuspechu++;
             if (aktualni.pocetNeuspechu >= MAX_NEUSPESNYCH_POKUSU) {
@@ -54,11 +54,7 @@ public class PrihlaseniOmezovac {
     }
 
     public void zaznamenejUspech(String email) {
-        zaznamy.remove(normalizuj(email));
-    }
-
-    private String normalizuj(String email) {
-        return email == null ? "" : email.trim().toLowerCase(Locale.ROOT);
+        zaznamy.remove(EmailValidace.normalizuj(email));
     }
 
     private static final class Zaznam {

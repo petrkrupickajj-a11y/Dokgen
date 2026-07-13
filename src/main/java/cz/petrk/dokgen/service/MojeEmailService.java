@@ -32,7 +32,8 @@ public class MojeEmailService {
      * mohl poslat do "prihlas se znovu" hlasky.
      */
     public String zmenEmail(String aktualniEmail, String soucasneHeslo, String novyEmail) {
-        Uzivatel uzivatel = uzivatelRepository.findByEmail(aktualniEmail)
+        String normalizovanyAktualniEmail = EmailValidace.normalizuj(aktualniEmail);
+        Uzivatel uzivatel = uzivatelRepository.findByEmail(normalizovanyAktualniEmail)
                 .orElseThrow(() -> new IllegalStateException("Přihlášený uživatel \"" + aktualniEmail + "\" nebyl nalezen."));
 
         if (!passwordEncoder.matches(soucasneHeslo == null ? "" : soucasneHeslo, uzivatel.getHeslo())) {
@@ -42,11 +43,11 @@ public class MojeEmailService {
             throw new IllegalArgumentException(zprava("chyba.moje_email.email_povinny"));
         }
 
-        String ocistenyEmail = novyEmail.trim();
+        String ocistenyEmail = EmailValidace.normalizuj(novyEmail);
         if (!EmailValidace.jePlatny(ocistenyEmail)) {
             throw new IllegalArgumentException(zprava("chyba.moje_email.email_format"));
         }
-        if (!ocistenyEmail.equals(aktualniEmail) && uzivatelRepository.existsByEmail(ocistenyEmail)) {
+        if (!ocistenyEmail.equals(normalizovanyAktualniEmail) && uzivatelRepository.existsByEmail(ocistenyEmail)) {
             throw new IllegalArgumentException(zprava("chyba.moje_email.email_obsazeny", ocistenyEmail));
         }
 

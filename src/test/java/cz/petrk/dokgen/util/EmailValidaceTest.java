@@ -30,4 +30,14 @@ class EmailValidaceTest {
     void retezecSMezerouNeniPlatny() {
         assertThat(EmailValidace.jePlatny("novak @example.com")).isFalse();
     }
+
+    @Test
+    void normalizujPrevedeNaMalaPismenaAOrizneMezery() {
+        assertThat(EmailValidace.normalizuj("  Novak@Example.COM  ")).isEqualTo("novak@example.com");
+    }
+
+    @Test
+    void normalizujNullVratiPrazdnyRetezec() {
+        assertThat(EmailValidace.normalizuj(null)).isEqualTo("");
+    }
 }

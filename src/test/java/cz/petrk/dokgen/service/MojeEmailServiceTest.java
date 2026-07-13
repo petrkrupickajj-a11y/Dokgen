@@ -76,6 +76,28 @@ class MojeEmailServiceTest {
     }
 
     @Test
+    void zmenEmailPrevedeNovyEmailNaMalaPismena() {
+        given(uzivatelRepository.findByEmail("admin@dokgen.local")).willReturn(Optional.of(uzivatel()));
+        given(passwordEncoder.matches("heslo", "$2a$stareHash")).willReturn(true);
+        given(uzivatelRepository.existsByEmail("novy@example.com")).willReturn(false);
+
+        String vysledek = service.zmenEmail("admin@dokgen.local", "heslo", "Novy@Example.COM");
+
+        assertThat(vysledek).isEqualTo("novy@example.com");
+    }
+
+    @Test
+    void zmenEmailNajdeUcetIKdyzJeAktualniEmailZadanSJinouVelikostiPismen() {
+        given(uzivatelRepository.findByEmail("admin@dokgen.local")).willReturn(Optional.of(uzivatel()));
+        given(passwordEncoder.matches("heslo", "$2a$stareHash")).willReturn(true);
+        given(uzivatelRepository.existsByEmail("novy@example.com")).willReturn(false);
+
+        service.zmenEmail("Admin@Dokgen.Local", "heslo", "novy@example.com");
+
+        verify(uzivatelRepository).findByEmail("admin@dokgen.local");
+    }
+
+    @Test
     void zmenEmailSNespravnymHeslemVyhodiChybu() {
         given(uzivatelRepository.findByEmail("admin@dokgen.local")).willReturn(Optional.of(uzivatel()));
         given(passwordEncoder.matches("spatneheslo", "$2a$stareHash")).willReturn(false);
