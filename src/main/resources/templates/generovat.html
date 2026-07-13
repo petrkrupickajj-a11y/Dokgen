@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <title th:text="#{generovat.title}">Vygenerovat dokument</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/styles.css}">
+</head>
+<body class="w-560" th:attr="data-stav-generuji=#{generovat.generuji},data-tlacitko-zrusit=#{spolecne.zrusit},data-tlacitko-potvrdit=#{spolecne.potvrdit}">
+    <a href="#hlavni-obsah" class="skip-link" th:text="#{spolecne.preskocit}">Přeskočit na obsah</a>
+    <nav>
+        <a href="/" class="aktivni" th:text="#{nav.klienti}">Klienti</a>
+        <a href="/sablony" th:if="${jeAdmin}" th:text="#{nav.sablony}">Šablony</a>
+        <a href="/historie" th:text="#{nav.historie}">Historie</a>
+        <form th:action="@{/logout}" method="post" style="display:inline" class="form-odhlasit" th:attr="data-potvrzeni=#{nav.odhlasit.confirm}">
+            <button type="submit" class="nav-odhlasit" th:text="#{nav.odhlasit}">Odhlásit se</button>
+        </form>
+        <div class="jazyky">
+            <a href="#" data-lang="cs" th:classappend="${#locale.language == 'cs'} ? ' aktivni-jazyk'">CS</a>
+            <a href="#" data-lang="en" th:classappend="${#locale.language == 'en'} ? ' aktivni-jazyk'">EN</a>
+            <a href="#" data-lang="de" th:classappend="${#locale.language == 'de'} ? ' aktivni-jazyk'">DE</a>
+        </div>
+    </nav>
+
+    <h1 id="hlavni-obsah" th:text="#{generovat.h1} + ' ' + ${klient.jmeno} + ' ' + ${klient.prijmeni}"></h1>
+
+    <div class="panel">
+        <form id="formularGenerovani" th:action="@{/generovat/{id}(id=${klient.id})}" method="post">
+            <label for="sablonaId" th:text="#{generovat.vyber_sablonu}">Vyber šablonu</label>
+            <select id="sablonaId" name="sablonaId">
+                <option th:each="s : ${sablony}" th:value="${s.id}"
+                        th:text="${s.nazev} + ' ' + (${s.vestavena} ? #{generovat.vestavena} : #{generovat.vlastni})"></option>
+            </select>
+
+            <div class="label-radek">
+                <label for="format" th:text="#{generovat.format}">Formát</label>
+                <span class="napoveda-ikona" tabindex="0" role="img"
+                      th:aria-label="#{spolecne.napoveda_prefix} + ' ' + #{generovat.format.napoveda}"
+                      th:attr="data-tip=#{generovat.format.napoveda}">💡</span>
+            </div>
+            <select id="format" name="format">
+                <option value="WORD" th:text="#{generovat.format.word}">Word (.docx)</option>
+                <option value="PDF" th:text="#{generovat.format.pdf}">PDF</option>
+            </select>
+
+            <div class="akce">
+                <button type="submit" th:text="#{generovat.generovat_stahnout}">Vygenerovat a stáhnout</button>
+                <button type="button" id="tlacitkoNahled" th:text="#{generovat.nahled}">Náhled</button>
+                <a class="zpet" href="/" th:text="#{generovat.zpet}">Zpět na seznam</a>
+                <span class="stav-odeslani" aria-live="polite"></span>
+            </div>
+        </form>
+    </div>
+
+    <script th:inline="javascript">
+        var urlNahledu = /*[[@{/generovat/{id}/nahled(id=${klient.id})}]]*/ '';
+
+        document.getElementById('formularGenerovani').addEventListener('submit', function (event) {
+            var tlacitko = event.target.querySelector('button[type=submit]');
+            var stav = event.target.querySelector('.stav-odeslani');
+            tlacitko.disabled = true;
+            stav.textContent = document.body.getAttribute('data-stav-generuji');
+            // stazeni neopousti stranku, tak tlacitko po chvili zase povolime
+            setTimeout(function () { tlacitko.disabled = false; stav.textContent = ''; }, 2000);
+        });
+
+        document.getElementById('tlacitkoNahled').addEventListener('click', function () {
+            var sablonaId = document.getElementById('sablonaId').value;
+            window.open(urlNahledu + '?sablonaId=' + encodeURIComponent(sablonaId), '_blank');
+        });
+    </script>
+
+    <button type="button" class="napoveda-tlacitko" aria-expanded="false" aria-controls="napoveda-panel" th:aria-label="#{spolecne.napoveda.label}">?</button>
+    <div id="napoveda-panel" class="napoveda-panel" hidden>
+        <h3 th:text="#{spolecne.napoveda.nadpis}">Jak to tady funguje</h3>
+        <p th:text="#{generovat.napoveda.text}">Vyber šablonu a formát (Word nebo PDF) a appka rovnou vygeneruje a stáhne dokument s údaji tohoto klienta doplněnými do šablony.</p>
+        <button type="button" class="zavrit" th:text="#{spolecne.zavrit}">Zavřít</button>
+    </div>
+    <script th:src="@{/napoveda.js}"></script>
+    <script th:src="@{/jazyky.js}"></script>
+    <script th:src="@{/potvrzeni.js}"></script>
+</body>
+</html>

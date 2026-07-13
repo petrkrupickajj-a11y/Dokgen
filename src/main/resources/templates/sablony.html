@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <title th:text="#{sablony.title}">Šablony dokumentů</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/styles.css}">
+</head>
+<body class="w-820" th:attr="data-stav-nahravam=#{sablony.nahravam},data-stav-nahrazuji=#{sablony.nahrazuji},data-stav-otevirem=#{sablony.otevirem},data-tlacitko-zrusit=#{spolecne.zrusit},data-tlacitko-potvrdit=#{spolecne.potvrdit}">
+    <a href="#hlavni-obsah" class="skip-link" th:text="#{spolecne.preskocit}">Přeskočit na obsah</a>
+    <nav>
+        <a href="/" th:text="#{nav.klienti}">Klienti</a>
+        <a href="/sablony" class="aktivni" th:if="${jeAdmin}" th:text="#{nav.sablony}">Šablony</a>
+        <a href="/historie" th:text="#{nav.historie}">Historie</a>
+        <form th:action="@{/logout}" method="post" style="display:inline" class="form-odhlasit" th:attr="data-potvrzeni=#{nav.odhlasit.confirm}">
+            <button type="submit" class="nav-odhlasit" th:text="#{nav.odhlasit}">Odhlásit se</button>
+        </form>
+        <div class="jazyky">
+            <a href="#" data-lang="cs" th:classappend="${#locale.language == 'cs'} ? ' aktivni-jazyk'">CS</a>
+            <a href="#" data-lang="en" th:classappend="${#locale.language == 'en'} ? ' aktivni-jazyk'">EN</a>
+            <a href="#" data-lang="de" th:classappend="${#locale.language == 'de'} ? ' aktivni-jazyk'">DE</a>
+        </div>
+    </nav>
+
+    <h1 id="hlavni-obsah" th:text="#{sablony.h1}">Šablony dokumentů</h1>
+    <p class="podnadpis" th:text="#{sablony.podnadpis}">Spravuj šablony pro generování dokumentů - nahraj vlastní .docx s placeholdery ${jmeno}, ${prijmeni}, ${telefon}, ${email}, ${adresa}, ${mesto}, ${psc}, ${ico}, ${poznamka}, ${datum}.
+    Existující šablonu jde tlačítkem Upravit otevřít rovnou ve Wordu na tomhle počítači (appka uvidí uloženou změnu automaticky), nebo si ji stáhni, uprav kdekoli jinde a upravenou verzi nahraj zpět tlačítkem Nahradit.</p>
+
+    <div class="panel panel-tabulka">
+        <div class="chybovy-box" role="alert" th:if="${chybaNahrani}" th:text="${chybaNahrani}"></div>
+        <div class="info-box" role="status" th:if="${otevrenaSablona}" th:text="#{sablony.otevrenaSablona(${otevrenaSablona})}"></div>
+
+        <table th:if="${!sablony.isEmpty()}" class="tabulka-sablon">
+            <tr>
+                <th scope="col" th:text="#{sablony.th.nazev}">Název</th>
+                <th scope="col" th:text="#{sablony.th.upraveno}">Naposledy upraveno</th>
+                <th scope="col" th:text="#{sablony.th.typ}">Typ</th>
+                <th scope="col" class="sloupec-akce"><span class="sr-only" th:text="#{sablony.th.akce}">Akce</span></th>
+            </tr>
+            <th:block th:each="s : ${sablony}">
+                <tr class="radek-hlavni">
+                    <td th:text="${s.nazev}"></td>
+                    <td th:text="${#temporals.format(s.nahranoDne, 'dd.MM.yyyy HH:mm')}"></td>
+                    <td>
+                        <span class="znacka vestavena" th:if="${s.vestavena}" th:text="#{sablony.vestavena}">Vestavěná</span>
+                        <span class="znacka vlastni" th:unless="${s.vestavena}" th:text="#{sablony.vlastni}">Vlastní</span>
+                    </td>
+                    <td>
+                        <button type="button" class="tlacitko-rozbalit" aria-expanded="false"
+                                th:attr="aria-controls='detail-' + ${s.id}">
+                            <svg viewBox="0 0 20 20" width="16" height="16" aria-hidden="true">
+                                <path d="M5 8l5 5 5-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+                            </svg>
+                            <span class="sr-only" th:text="#{sablony.moznosti(${s.nazev})}">Možnosti</span>
+                        </button>
+                    </td>
+                </tr>
+                <tr class="radek-detail-radek">
+                    <td colspan="4">
+                        <div class="radek-detail" th:id="'detail-' + ${s.id}">
+                            <div>
+                                <div class="detail-obsah">
+                                    <div class="skupina-akci">
+                                        <h4 th:text="#{sablony.skupina.zobrazit}">Zobrazit a upravit</h4>
+                                        <div class="radek-tlacitek">
+                                            <form class="upravit-form disable-on-submit" th:action="@{/sablony/{id}/upravit(id=${s.id})}" method="post">
+                                                <button type="submit" class="upravit" th:text="#{sablony.upravit}">Upravit</button>
+                                                <span class="stav-odeslani" aria-live="polite"></span>
+                                            </form>
+                                            <a class="odkaz" th:href="@{/sablony/{id}/stahnout(id=${s.id})}" th:text="#{sablony.stahnout}">Stáhnout</a>
+                                            <a class="odkaz" th:href="@{/sablony/{id}/verze(id=${s.id})}" th:text="#{sablony.historie_verzi}">Historie verzí</a>
+                                        </div>
+                                    </div>
+
+                                    <div class="skupina-akci">
+                                        <h4 th:text="#{sablony.skupina.nahradit}">Nahradit soubor</h4>
+                                        <div class="radek-tlacitek">
+                                            <form class="nahradit-form disable-on-submit" th:action="@{/sablony/{id}/nahradit(id=${s.id})}" method="post"
+                                                  enctype="multipart/form-data">
+                                                <label class="vybrat-soubor">
+                                                    <span th:text="#{sablony.vybrat_soubor}">Vybrat soubor</span>
+                                                    <input type="file" name="soubor" accept=".docx" required />
+                                                </label>
+                                                <button type="submit" class="nahradit" th:text="#{sablony.nahradit}">Nahradit</button>
+                                                <span class="stav-odeslani" aria-live="polite"></span>
+                                            </form>
+                                        </div>
+                                    </div>
+
+                                    <div class="skupina-akci nebezpecne">
+                                        <h4 th:text="#{sablony.skupina.nebezpecne}">Nebezpečné akce</h4>
+                                        <div class="radek-tlacitek">
+                                            <form th:action="@{/sablony/smazat/{id}(id=${s.id})}" method="post"
+                                                  th:attr="data-potvrzeni=#{sablony.smazat.confirm(${s.nazev})}">
+                                                <button type="submit" class="smazat" th:text="#{sablony.smazat}">Smazat</button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+            </th:block>
+        </table>
+
+        <h2 th:text="#{sablony.nahrat_novou}">Nahrát novou šablonu</h2>
+        <form class="disable-on-submit" th:action="@{/sablony/nahrat}" method="post" enctype="multipart/form-data">
+            <label for="nazev-sablony" th:text="#{sablony.nazev_sablony}">Název šablony</label>
+            <input type="text" id="nazev-sablony" name="nazev" required autocomplete="off" />
+
+            <label for="soubor-sablony" th:text="#{sablony.soubor_docx}">Soubor (.docx)</label>
+            <input type="file" id="soubor-sablony" name="soubor" accept=".docx" required />
+
+            <div class="akce">
+                <button type="submit" th:text="#{sablony.nahrat}">Nahrát</button>
+                <a class="zpet" href="/" th:text="#{spolecne.zpet_klienti}">Zpět na seznam klientů</a>
+                <span class="stav-odeslani" aria-live="polite"></span>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        // nahrani/nahrazeni/otevreni presmeruje na jinou stranku, takze tlacitko
+        // muze zustat natrvalo vypnute - zabrani to omylem dvojite akci
+        document.querySelectorAll('.disable-on-submit').forEach(function (form) {
+            form.addEventListener('submit', function (event) {
+                var tlacitko = event.target.querySelector('button[type=submit]');
+                tlacitko.disabled = true;
+                var zprava = document.body.getAttribute('data-stav-nahravam');
+                if (tlacitko.classList.contains('nahradit')) {
+                    zprava = document.body.getAttribute('data-stav-nahrazuji');
+                } else if (tlacitko.classList.contains('upravit')) {
+                    zprava = document.body.getAttribute('data-stav-otevirem');
+                }
+                event.target.querySelector('.stav-odeslani').textContent = zprava;
+            });
+        });
+
+        // Rozbalovaci panel s akcemi u kazde sablony - v jednu chvili smi byt
+        // rozbaleny jen jeden radek, klik na jiny predchozi zase zabali.
+        document.querySelectorAll('.radek-hlavni').forEach(function (radekHlavni) {
+            var tlacitko = radekHlavni.querySelector('.tlacitko-rozbalit');
+            var detail = document.getElementById(tlacitko.getAttribute('aria-controls'));
+
+            function prepni() {
+                var jeOtevreny = detail.classList.contains('otevreno');
+
+                document.querySelectorAll('.radek-detail.otevreno').forEach(function (otevreny) {
+                    otevreny.classList.remove('otevreno');
+                    var jineTlacitko = document.querySelector('[aria-controls="' + otevreny.id + '"]');
+                    jineTlacitko.setAttribute('aria-expanded', 'false');
+                    jineTlacitko.closest('tr').classList.remove('otevreno');
+                });
+
+                if (!jeOtevreny) {
+                    detail.classList.add('otevreno');
+                    tlacitko.setAttribute('aria-expanded', 'true');
+                    radekHlavni.classList.add('otevreno');
+                }
+            }
+
+            radekHlavni.addEventListener('click', prepni);
+            tlacitko.addEventListener('click', function (event) {
+                event.stopPropagation();
+                prepni();
+            });
+        });
+    </script>
+
+    <button type="button" class="napoveda-tlacitko" aria-expanded="false" aria-controls="napoveda-panel" th:aria-label="#{spolecne.napoveda.label}">?</button>
+    <div id="napoveda-panel" class="napoveda-panel" hidden>
+        <h3 th:text="#{spolecne.napoveda.nadpis}">Jak to tady funguje</h3>
+        <p th:text="#{sablony.napoveda.text}">Spravuj šablony pro generování dokumentů - nahraj vlastní .docx s placeholdery jako ${jmeno}, existující šablonu rovnou otevři tlačítkem Upravit, nebo si ji stáhni, uprav a nahraj zpět, případně smaž.</p>
+        <button type="button" class="zavrit" th:text="#{spolecne.zavrit}">Zavřít</button>
+    </div>
+    <script th:src="@{/napoveda.js}"></script>
+    <script th:src="@{/jazyky.js}"></script>
+    <script th:src="@{/potvrzeni.js}"></script>
+</body>
+</html>

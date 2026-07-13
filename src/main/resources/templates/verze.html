@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <title th:text="#{verze.title}">Historie verzí šablony</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/styles.css}">
+</head>
+<body class="w-820" th:attr="data-tlacitko-zrusit=#{spolecne.zrusit},data-tlacitko-potvrdit=#{spolecne.potvrdit}">
+    <a href="#hlavni-obsah" class="skip-link" th:text="#{spolecne.preskocit}">Přeskočit na obsah</a>
+    <nav>
+        <a href="/" th:text="#{nav.klienti}">Klienti</a>
+        <a href="/sablony" class="aktivni" th:if="${jeAdmin}" th:text="#{nav.sablony}">Šablony</a>
+        <a href="/historie" th:text="#{nav.historie}">Historie</a>
+        <form th:action="@{/logout}" method="post" style="display:inline" class="form-odhlasit" th:attr="data-potvrzeni=#{nav.odhlasit.confirm}">
+            <button type="submit" class="nav-odhlasit" th:text="#{nav.odhlasit}">Odhlásit se</button>
+        </form>
+        <div class="jazyky">
+            <a href="#" data-lang="cs" th:classappend="${#locale.language == 'cs'} ? ' aktivni-jazyk'">CS</a>
+            <a href="#" data-lang="en" th:classappend="${#locale.language == 'en'} ? ' aktivni-jazyk'">EN</a>
+            <a href="#" data-lang="de" th:classappend="${#locale.language == 'de'} ? ' aktivni-jazyk'">DE</a>
+        </div>
+    </nav>
+
+    <h1 id="hlavni-obsah" th:text="#{verze.h1} + ' ' + ${sablona.nazev}"></h1>
+    <p class="podnadpis" th:text="#{verze.podnadpis}">Starší verze vznikají automaticky při každém nahrazení obsahu šablony přes tlačítko Nahradit - kdykoli se k nim můžeš vrátit.</p>
+
+    <div class="panel panel-tabulka">
+        <div class="info-box" role="status" th:if="${verzeObnovena}" th:text="#{verze.obnovena}"></div>
+
+        <table th:if="${!verze.isEmpty()}">
+            <tr>
+                <th scope="col" th:text="#{verze.th.datum}">Uloženo</th>
+                <th scope="col" th:text="#{verze.th.akce}">Akce</th>
+            </tr>
+            <tr th:each="v : ${verze}">
+                <td th:text="${#temporals.format(v.ulozenoDne, 'dd.MM.yyyy HH:mm')}"></td>
+                <td>
+                    <div class="akce-radek">
+                        <a class="odkaz" th:href="@{/sablony/{id}/verze/{verzeId}/stahnout(id=${sablona.id},verzeId=${v.id})}" th:text="#{verze.stahnout}">Stáhnout</a>
+                        <form class="form-obnovit-verzi" th:action="@{/sablony/{id}/verze/{verzeId}/obnovit(id=${sablona.id},verzeId=${v.id})}" method="post"
+                              th:attr="data-potvrzeni=#{verze.obnovit.confirm}">
+                            <button type="submit" class="upravit" th:text="#{verze.obnovit}">Obnovit tuto verzi</button>
+                        </form>
+                    </div>
+                </td>
+            </tr>
+        </table>
+
+        <p class="prazdno" th:if="${verze.isEmpty()}" th:text="#{verze.prazdno}">Tahle šablona ještě nemá žádné starší verze.</p>
+
+        <div class="akce">
+            <a class="zpet" href="/sablony" th:text="#{verze.zpet}">Zpět na šablony</a>
+        </div>
+    </div>
+
+    <script th:src="@{/jazyky.js}"></script>
+    <script th:src="@{/potvrzeni.js}"></script>
+</body>
+</html>
