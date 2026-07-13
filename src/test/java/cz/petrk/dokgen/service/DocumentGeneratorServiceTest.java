@@ -8,9 +8,15 @@ import cz.petrk.dokgen.repository.SablonaRepository;
 import cz.petrk.dokgen.repository.SablonaVerzeRepository;
 import cz.petrk.dokgen.repository.SmazanaVestavenaSablonaRepository;
 import org.apache.poi.openxml4j.util.ZipSecureFile;
+import org.apache.poi.xwpf.model.XWPFHeaderFooterPolicy;
 import org.apache.poi.xwpf.usermodel.XWPFDocument;
+import org.apache.poi.xwpf.usermodel.XWPFFooter;
 import org.apache.poi.xwpf.usermodel.XWPFParagraph;
 import org.apache.poi.xwpf.usermodel.XWPFRun;
+import org.apache.poi.xwpf.usermodel.XWPFTable;
+import org.apache.poi.xwpf.usermodel.XWPFTableCell;
+import org.apache.poi.xwpf.usermodel.XWPFTableRow;
+import org.apache.xmlbeans.XmlCursor;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -169,6 +175,48 @@ class DocumentGeneratorServiceTest {
         // "${datum}" v poznamce je jen doslovny text klienta, ne skutecny placeholder
         // ze sablony - nesmi se dodatecne prepsat dnesnim datem
         assertThat(text).contains("Platba proběhla dne ${datum} v hotovosti.");
+    }
+
+    @Test
+    void vygenerujDokumentNahradiPlaceholderyVZapatiIVeVnorenTabulce() throws IOException {
+        uloziste.uloz("zapati-vnorena-tabulka.docx", docxSZapatimAVnorenouTabulkou());
+        given(sablonaRepository.findById(70L)).willReturn(Optional.of(
+                new Sablona("Test - zápatí a vnořená tabulka", "zapati-vnorena-tabulka.docx", false)));
+
+        byte[] dokument = service.vygenerujDokument(vzorovyKlient(), 70L).obsah();
+
+        try (XWPFDocument vysledek = new XWPFDocument(new ByteArrayInputStream(dokument))) {
+            String textZapati = vysledek.getFooterList().get(0).getText();
+            assertThat(textZapati).contains("Jan").doesNotContain("${jmeno}");
+
+            String textVnoreneTabulky = vysledek.getTables().get(0).getRow(0).getCell(0)
+                    .getTables().get(0).getRow(0).getCell(0).getText();
+            assertThat(textVnoreneTabulky).contains("Novák").doesNotContain("${prijmeni}");
+        }
+    }
+
+    /** Sablona s placeholderem v zapati a v tabulce vnorene uvnitr bunky jine tabulky. */
+    private byte[] docxSZapatimAVnorenouTabulkou() throws IOException {
+        try (XWPFDocument dokument = new XWPFDocument()) {
+            XWPFTable vnejsiTabulka = dokument.createTable(1, 1);
+            XWPFTableCell vnejsiBunka = vnejsiTabulka.getRow(0).getCell(0);
+
+            XmlCursor kurzor = vnejsiBunka.getParagraphs().get(0).getCTP().newCursor();
+            XWPFTable vnorenaTabulka = vnejsiBunka.insertNewTbl(kurzor);
+            kurzor.dispose();
+            // insertNewTbl vytvori jen prazdnou tabulku bez radku - radek a bunku je potreba doplnit rucne
+            XWPFTableRow vnorenyRadek = vnorenaTabulka.createRow();
+            XWPFTableCell vnorenaBunka = vnorenyRadek.getCell(0) != null ? vnorenyRadek.getCell(0) : vnorenyRadek.createCell();
+            vnorenaBunka.setText("${prijmeni}");
+
+            XWPFHeaderFooterPolicy politika = dokument.createHeaderFooterPolicy();
+            XWPFFooter zapati = politika.createFooter(XWPFHeaderFooterPolicy.DEFAULT);
+            zapati.createParagraph().createRun().setText("${jmeno}");
+
+            ByteArrayOutputStream vystup = new ByteArrayOutputStream();
+            dokument.write(vystup);
+            return vystup.toByteArray();
+        }
     }
 
     @Test

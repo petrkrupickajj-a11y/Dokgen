@@ -7,7 +7,10 @@ import cz.petrk.dokgen.entity.SmazanaVestavenaSablona;
 import cz.petrk.dokgen.repository.SablonaRepository;
 import cz.petrk.dokgen.repository.SablonaVerzeRepository;
 import cz.petrk.dokgen.repository.SmazanaVestavenaSablonaRepository;
+import org.apache.poi.xwpf.usermodel.IBody;
 import org.apache.poi.xwpf.usermodel.XWPFDocument;
+import org.apache.poi.xwpf.usermodel.XWPFFooter;
+import org.apache.poi.xwpf.usermodel.XWPFHeader;
 import org.apache.poi.xwpf.usermodel.XWPFParagraph;
 import org.apache.poi.xwpf.usermodel.XWPFRun;
 import org.apache.poi.xwpf.usermodel.XWPFTable;
@@ -40,7 +43,8 @@ import java.util.stream.Collectors;
  * Princip je jednoduchy:
  *  1. Najdeme Sablona zaznam v databazi podle id a nacteme jeho .docx soubor
  *     z adresare spravovaneho SablonaUlozisteService.
- *  2. Projdeme vsechny odstavce (a bunky tabulek) a hledame placeholdery
+ *  2. Projdeme vsechny odstavce v tele, zahlavi i zapati dokumentu, vcetne
+ *     bunek tabulek (i vnorenych) - viz nahradVTele - a hledame placeholdery
  *     typu ${jmeno}, ${prijmeni} atd.
  *  3. Kde placeholder najdeme, nahradime ho skutecnou hodnotou z databaze.
  *  4. Vratime vysledny .docx jako pole bajtu -> to pak posleme uzivateli
@@ -92,20 +96,15 @@ public class DocumentGeneratorService {
              XWPFDocument dokument = new XWPFDocument(vstup);
              ByteArrayOutputStream vystup = new ByteArrayOutputStream()) {
 
-            // Bezne odstavce v tele dokumentu
-            for (XWPFParagraph odstavec : dokument.getParagraphs()) {
-                nahradVOdstavci(odstavec, data, vzorPlaceholderu);
-            }
+            // Telo dokumentu (odstavce i tabulky vcetne vnorenych - viz nahradVTele)
+            nahradVTele(dokument, data, vzorPlaceholderu);
 
-            // Odstavce uvnitr tabulek (napr. tabulka s cenovou nabidkou)
-            for (XWPFTable tabulka : dokument.getTables()) {
-                for (XWPFTableRow radek : tabulka.getRows()) {
-                    for (XWPFTableCell bunka : radek.getTableCells()) {
-                        for (XWPFParagraph odstavec : bunka.getParagraphs()) {
-                            nahradVOdstavci(odstavec, data, vzorPlaceholderu);
-                        }
-                    }
-                }
+            // Zahlavi a zapati - dokument jich muze mit vic (pro prvni/lichou/sudou stranku)
+            for (XWPFHeader zahlavi : dokument.getHeaderList()) {
+                nahradVTele(zahlavi, data, vzorPlaceholderu);
+            }
+            for (XWPFFooter zapati : dokument.getFooterList()) {
+                nahradVTele(zapati, data, vzorPlaceholderu);
             }
 
             dokument.write(vystup);
@@ -288,6 +287,26 @@ public class DocumentGeneratorService {
     private Pattern sestavVzorPlaceholderu(Set<String> placeholdery) {
         String alternativy = placeholdery.stream().map(Pattern::quote).collect(Collectors.joining("|"));
         return Pattern.compile(alternativy);
+    }
+
+    /**
+     * Projde vsechny odstavce a tabulky jednoho "tela" dokumentu - samotneho
+     * tela dokumentu, zahlavi, zapati, nebo bunky tabulky (vsechny implementuji
+     * spolecne rozhrani IBody) - a nahradi v nich placeholdery. Tabulky
+     * zanorene uvnitr bunky jine tabulky se resi rekurzi (bunka je taky IBody),
+     * takze placeholder najde i v libovolne hluboko vnorene tabulce.
+     */
+    private void nahradVTele(IBody telo, Map<String, String> data, Pattern vzorPlaceholderu) {
+        for (XWPFParagraph odstavec : telo.getParagraphs()) {
+            nahradVOdstavci(odstavec, data, vzorPlaceholderu);
+        }
+        for (XWPFTable tabulka : telo.getTables()) {
+            for (XWPFTableRow radek : tabulka.getRows()) {
+                for (XWPFTableCell bunka : radek.getTableCells()) {
+                    nahradVTele(bunka, data, vzorPlaceholderu);
+                }
+            }
+        }
     }
 
     /**
