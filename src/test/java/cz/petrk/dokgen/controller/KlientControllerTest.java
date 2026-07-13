@@ -300,6 +300,17 @@ class KlientControllerTest {
     }
 
     @Test
+    void generujDokumentSNeplatnymFormatemVratiChybovouStranku() throws Exception {
+        mockMvc.perform(post("/generovat/1").with(csrf())
+                        .param("sablonaId", "1")
+                        .param("format", "EXE"))
+                .andExpect(status().isNotFound())
+                .andExpect(view().name("chyba"));
+
+        verify(documentGeneratorService, never()).vygenerujDokument(any(), any());
+    }
+
+    @Test
     void generujDokumentSNeznamouSablonouVratiChybovouStranku() throws Exception {
         Klient klient = vzorovyKlient(1L);
         given(klientRepository.findById(1L)).willReturn(Optional.of(klient));

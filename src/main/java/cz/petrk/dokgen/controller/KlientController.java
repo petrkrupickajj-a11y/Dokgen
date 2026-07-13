@@ -133,6 +133,8 @@ public class KlientController {
     public ResponseEntity<byte[]> generujDokument(@PathVariable Long id,
                                                    @RequestParam Long sablonaId,
                                                    @RequestParam(defaultValue = "WORD") String format) throws IOException {
+        String formatOvereny = overFormat(format);
+
         Klient klient = klientRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException(zprava("chyba.klient.neexistuje", id)));
 
@@ -142,7 +144,7 @@ public class KlientController {
         byte[] dokument;
         String pripona;
         MediaType typ;
-        if ("PDF".equalsIgnoreCase(format)) {
+        if ("PDF".equals(formatOvereny)) {
             dokument = pdfExportService.prevedNaPdf(vysledek.obsah());
             pripona = ".pdf";
             typ = MediaType.APPLICATION_PDF;
@@ -153,11 +155,10 @@ public class KlientController {
                     "application/vnd.openxmlformats-officedocument.wordprocessingml.document");
         }
 
-        String formatUpper = format.toUpperCase(java.util.Locale.ROOT);
-        VygenerovanyDokument zaznam = historieService.zaznamenej(klient, sablona, formatUpper);
+        VygenerovanyDokument zaznam = historieService.zaznamenej(klient, sablona, formatOvereny);
         // Samotny soubor se uklada vedle audit zaznamu (viz VygenerovanyDokumentUlozisteService),
         // aby ho slo pozdeji znovu otevrit z /historie ("Zobrazit").
-        vygenerovanyDokumentUloziste.uloz(zaznam.getId(), formatUpper, dokument);
+        vygenerovanyDokumentUloziste.uloz(zaznam.getId(), formatOvereny, dokument);
 
         String nazevSouboru = NazevSouboru.ocisti(sablona.getNazev()) + "_"
                 + NazevSouboru.ocisti(klient.getPrijmeni()) + pripona;
@@ -167,6 +168,18 @@ public class KlientController {
         headers.setContentDispositionFormData("attachment", nazevSouboru);
 
         return new ResponseEntity<>(dokument, headers, HttpStatus.OK);
+    }
+
+    // Format prijde jako obycejny textovy parametr formulare - normalni pouziti appky
+    // posila jen "WORD"/"PDF" (viz generovat.html), ale primy HTTP pozadavek by mohl
+    // poslat cokoliv jineho. Bez teto kontroly by se libovolny retezec ulozil do
+    // historie (VygenerovanyDokument.format) a pouzil pri uklidu/otevirani souboru.
+    private String overFormat(String format) {
+        String formatVelkymi = format == null ? "" : format.toUpperCase(Locale.ROOT);
+        if (!formatVelkymi.equals("WORD") && !formatVelkymi.equals("PDF")) {
+            throw new IllegalArgumentException(zprava("chyba.generovat.format_neplatny", format));
+        }
+        return formatVelkymi;
     }
 
     // Nahled dokumentu primo v prohlizeci pred stazenim - vzdy jako PDF (i kdyz
