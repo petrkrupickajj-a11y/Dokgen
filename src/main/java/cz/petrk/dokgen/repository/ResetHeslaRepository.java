@@ -1,6 +1,7 @@
 package cz.petrk.dokgen.repository;
 
 import cz.petrk.dokgen.entity.ResetHesla;
+import cz.petrk.dokgen.entity.Uzivatel;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.time.LocalDateTime;
@@ -11,4 +12,7 @@ public interface ResetHeslaRepository extends JpaRepository<ResetHesla, Long> {
 
     /** Smaze uz pouzite nebo prosle tokeny (viz ResetHeslaUklidRunner) a vrati jejich pocet. */
     long deleteByPouzitTrueOrVyprsiDneBefore(LocalDateTime hranice);
+
+    /** Smaze zaznamy patrici ucta, aby sel ucet smazat bez naruseni cizi klice (viz SpravaUctuService.smaz). */
+    void deleteByUzivatel(Uzivatel uzivatel);
 }

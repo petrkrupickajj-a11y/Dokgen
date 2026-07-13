@@ -1,6 +1,7 @@
 package cz.petrk.dokgen.controller;
 
 import cz.petrk.dokgen.service.SpravaUctuService;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -18,9 +19,10 @@ public class UzivateleController {
     }
 
     @GetMapping("/uzivatele")
-    public String seznam(Model model) {
+    public String seznam(Authentication authentication, Model model) {
         model.addAttribute("cekajici", spravaUctuService.getCekajiciUcty());
         model.addAttribute("aktivni", spravaUctuService.getAktivniUcty());
+        model.addAttribute("aktualniEmail", authentication.getName());
         return "uzivatele";
     }
 
@@ -38,6 +40,16 @@ public class UzivateleController {
     public String zamitnout(@PathVariable Long id, RedirectAttributes redirectAttributes) {
         try {
             spravaUctuService.zamitni(id);
+        } catch (IllegalArgumentException e) {
+            redirectAttributes.addFlashAttribute("chyba", e.getMessage());
+        }
+        return "redirect:/uzivatele";
+    }
+
+    @PostMapping("/uzivatele/{id}/smazat")
+    public String smazat(@PathVariable Long id, Authentication authentication, RedirectAttributes redirectAttributes) {
+        try {
+            spravaUctuService.smaz(id, authentication.getName());
         } catch (IllegalArgumentException e) {
             redirectAttributes.addFlashAttribute("chyba", e.getMessage());
         }

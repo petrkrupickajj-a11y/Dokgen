@@ -60,10 +60,17 @@
             <tr>
                 <th scope="col" th:text="#{pole.email}">Email</th>
                 <th scope="col" th:text="#{uzivatele.th.vytvoreno}">Vytvořeno</th>
+                <th scope="col" th:text="#{uzivatele.th.akce}">Akce</th>
             </tr>
             <tr th:each="u : ${aktivni}">
                 <td th:text="${u.email}"></td>
                 <td th:text="${#temporals.format(u.vytvorenoDne, 'dd.MM.yyyy HH:mm')}"></td>
+                <td>
+                    <form th:unless="${u.email == aktualniEmail}" th:action="@{/uzivatele/{id}/smazat(id=${u.id})}" method="post" style="display:inline"
+                          th:attr="data-potvrzeni=#{uzivatele.smazat.confirm(${u.email})}">
+                        <button type="submit" class="smazat" th:text="#{uzivatele.smazat}">Smazat</button>
+                    </form>
+                </td>
             </tr>
         </table>
     </div>

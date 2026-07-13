@@ -24,7 +24,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 
 @WebMvcTest(UzivateleController.class)
-@WithMockUser
+@WithMockUser(username = "admin@dokgen.local")
 class UzivateleControllerTest {
 
     @Autowired
@@ -44,7 +44,8 @@ class UzivateleControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(view().name("uzivatele"))
                 .andExpect(model().attribute("cekajici", cekajici))
-                .andExpect(model().attribute("aktivni", aktivni));
+                .andExpect(model().attribute("aktivni", aktivni))
+                .andExpect(model().attribute("aktualniEmail", "admin@dokgen.local"));
     }
 
     @Test
@@ -73,5 +74,25 @@ class UzivateleControllerTest {
                 .andExpect(redirectedUrl("/uzivatele"));
 
         verify(spravaUctuService).zamitni(1L);
+    }
+
+    @Test
+    void smazatPresmerujeZpetNaSeznam() throws Exception {
+        mockMvc.perform(post("/uzivatele/{id}/smazat", 1L).with(csrf()))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/uzivatele"));
+
+        verify(spravaUctuService).smaz(1L, "admin@dokgen.local");
+    }
+
+    @Test
+    void smazatSChybouJiVratiVeFlashAtributu() throws Exception {
+        willThrow(new IllegalArgumentException("Nemůžeš smazat účet, pod kterým jsi právě přihlášený."))
+                .given(spravaUctuService).smaz(1L, "admin@dokgen.local");
+
+        mockMvc.perform(post("/uzivatele/{id}/smazat", 1L).with(csrf()))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/uzivatele"))
+                .andExpect(flash().attribute("chyba", "Nemůžeš smazat účet, pod kterým jsi právě přihlášený."));
     }
 }

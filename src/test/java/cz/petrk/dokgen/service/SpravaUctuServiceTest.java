@@ -1,6 +1,7 @@
 package cz.petrk.dokgen.service;
 
 import cz.petrk.dokgen.entity.Uzivatel;
+import cz.petrk.dokgen.repository.ResetHeslaRepository;
 import cz.petrk.dokgen.repository.UzivatelRepository;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -22,6 +23,7 @@ import static org.mockito.Mockito.verify;
 class SpravaUctuServiceTest {
 
     private UzivatelRepository uzivatelRepository;
+    private ResetHeslaRepository resetHeslaRepository;
     private SpravaUctuService service;
 
     @BeforeEach
@@ -32,7 +34,8 @@ class SpravaUctuServiceTest {
         zpravy.setDefaultEncoding("UTF-8");
 
         uzivatelRepository = Mockito.mock(UzivatelRepository.class);
-        service = new SpravaUctuService(uzivatelRepository, zpravy);
+        resetHeslaRepository = Mockito.mock(ResetHeslaRepository.class);
+        service = new SpravaUctuService(uzivatelRepository, resetHeslaRepository, zpravy);
     }
 
     @AfterEach
@@ -108,5 +111,47 @@ class SpravaUctuServiceTest {
                 .isInstanceOf(IllegalArgumentException.class);
 
         verify(uzivatelRepository, never()).delete(org.mockito.ArgumentMatchers.any());
+    }
+
+    @Test
+    void smazOdstraniResetHeslaZaznamyIUcetSamotny() {
+        Uzivatel cizi = new Uzivatel("novak@example.com", "hash");
+        given(uzivatelRepository.findById(1L)).willReturn(Optional.of(cizi));
+
+        service.smaz(1L, "admin@dokgen.local");
+
+        verify(resetHeslaRepository).deleteByUzivatel(cizi);
+        verify(uzivatelRepository).delete(cizi);
+    }
+
+    @Test
+    void smazNeexistujicihoUctuVyhodiChybu() {
+        given(uzivatelRepository.findById(1L)).willReturn(Optional.empty());
+
+        assertThatThrownBy(() -> service.smaz(1L, "admin@dokgen.local"))
+                .isInstanceOf(IllegalArgumentException.class);
+
+        verify(uzivatelRepository, never()).delete(org.mockito.ArgumentMatchers.any());
+    }
+
+    @Test
+    void smazVlastnihoUctuVyhodiChybuANesmazeHo() {
+        Uzivatel prihlaseny = new Uzivatel("admin@dokgen.local", "hash");
+        given(uzivatelRepository.findById(1L)).willReturn(Optional.of(prihlaseny));
+
+        assertThatThrownBy(() -> service.smaz(1L, "admin@dokgen.local"))
+                .isInstanceOf(IllegalArgumentException.class);
+
+        verify(uzivatelRepository, never()).delete(org.mockito.ArgumentMatchers.any());
+        verify(resetHeslaRepository, never()).deleteByUzivatel(org.mockito.ArgumentMatchers.any());
+    }
+
+    @Test
+    void smazVlastnihoUctuJeNecitlivyNaVelikostPismenEmailu() {
+        Uzivatel prihlaseny = new Uzivatel("admin@dokgen.local", "hash");
+        given(uzivatelRepository.findById(1L)).willReturn(Optional.of(prihlaseny));
+
+        assertThatThrownBy(() -> service.smaz(1L, "Admin@Dokgen.Local"))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 }
