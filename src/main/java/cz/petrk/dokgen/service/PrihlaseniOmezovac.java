@@ -22,6 +22,11 @@ import java.util.concurrent.ConcurrentHashMap;
  * Zaznamy zijou jen v pameti procesu - restart appky je vynuluje. Pro appku
  * pouzivanou jednotkami lidi v ramci jedne firmy je to dostatecna ochrana
  * bez potreby externiho uloziste (Redis apod.).
+ *
+ * Mapa by jinak rostla neomezene - kazdy pokus o zkoumani nahodnych/neexistujicich
+ * emailu by v ni navzdy zustal zaznam. zaznamenejNeuspech proto pri kazdem zapisu
+ * promaze zaznamy, u kterych od posledni aktivity uplynul dvojnasobek DOBA_ZAMCENI -
+ * v tu chvili uz nemaji na vysledek jeZamceno zadny vliv, takze je bezpecne je zahodit.
  */
 @Component
 public class PrihlaseniOmezovac {
@@ -42,23 +47,37 @@ public class PrihlaseniOmezovac {
     }
 
     public void zaznamenejNeuspech(String email) {
+        Instant ted = Instant.now(hodiny);
         zaznamy.compute(EmailValidace.normalizuj(email), (klic, zaznam) -> {
             Zaznam aktualni = zaznam == null ? new Zaznam() : zaznam;
             aktualni.pocetNeuspechu++;
+            aktualni.posledniAktivita = ted;
             if (aktualni.pocetNeuspechu >= MAX_NEUSPESNYCH_POKUSU) {
-                aktualni.zamcenoDo = Instant.now(hodiny).plus(DOBA_ZAMCENI);
+                aktualni.zamcenoDo = ted.plus(DOBA_ZAMCENI);
                 aktualni.pocetNeuspechu = 0;
             }
             return aktualni;
         });
+        uklidStarychZaznamu(ted);
     }
 
     public void zaznamenejUspech(String email) {
         zaznamy.remove(EmailValidace.normalizuj(email));
     }
 
+    private void uklidStarychZaznamu(Instant ted) {
+        Instant hranice = ted.minus(DOBA_ZAMCENI.multipliedBy(2));
+        zaznamy.values().removeIf(zaznam -> zaznam.posledniAktivita.isBefore(hranice));
+    }
+
+    /** Jen pro testy - overeni, ze mapa opravdu neroste neomezene. */
+    int pocetZaznamu() {
+        return zaznamy.size();
+    }
+
     private static final class Zaznam {
         private int pocetNeuspechu;
         private Instant zamcenoDo;
+        private Instant posledniAktivita;
     }
 }

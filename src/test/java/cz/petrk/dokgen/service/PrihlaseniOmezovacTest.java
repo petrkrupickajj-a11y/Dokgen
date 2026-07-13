@@ -85,6 +85,39 @@ class PrihlaseniOmezovacTest {
         assertThat(omezovac.jeZamceno("asistentka")).isFalse();
     }
 
+    @Test
+    void starePromazeAzPriDalsimZapisu() {
+        // Jeden neuspech pro "admin" - zaznam zustane, dokud neuplyne dvojnasobek DOBA_ZAMCENI.
+        omezovac.zaznamenejNeuspech("admin");
+        assertThat(omezovac.pocetZaznamu()).isEqualTo(1);
+
+        hodiny.posunOMinut(29);
+        omezovac.zaznamenejNeuspech("asistentka");
+        assertThat(omezovac.pocetZaznamu()).isEqualTo(2);
+
+        // Po 31 minutach (> 2x DOBA_ZAMCENI = 30 min) od posledni aktivity "admin"
+        // uz jeho zaznam nema na vysledek zadny vliv - dalsi zapis (pro jiny email) ho promaze.
+        hodiny.posunOMinut(2);
+        omezovac.zaznamenejNeuspech("treti-ucet");
+
+        assertThat(omezovac.pocetZaznamu()).isEqualTo(2);
+    }
+
+    @Test
+    void aktivniZaznamSeNepromazeAniPriUklidu() {
+        for (int i = 0; i < 5; i++) {
+            omezovac.zaznamenejNeuspech("admin");
+        }
+        assertThat(omezovac.jeZamceno("admin")).isTrue();
+
+        // 10 minut < DOBA_ZAMCENI (15 min), zamek jeste trva
+        hodiny.posunOMinut(10);
+        omezovac.zaznamenejNeuspech("jiny-ucet");
+
+        assertThat(omezovac.jeZamceno("admin")).isTrue();
+        assertThat(omezovac.pocetZaznamu()).isEqualTo(2);
+    }
+
     /** Testovaci Clock s Instant, ktery se da v testu rucne posunout dopredu v case. */
     private static final class TestovaciHodiny extends Clock {
         private Instant cas;
