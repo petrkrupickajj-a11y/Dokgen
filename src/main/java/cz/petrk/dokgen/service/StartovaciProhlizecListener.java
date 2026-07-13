@@ -9,11 +9,12 @@ import java.awt.Desktop;
 import java.net.URI;
 
 /**
- * Po startu appky automaticky otevre vychozi prohlizec na hlavni stranku, aby
- * appka pusobila jako normalni desktopovy program (viz .exe balicek pres
- * jpackage), ne jako neco, co je potreba obsluhovat pres konzoli. Na headless
- * serveru (bez GUI) se preskoci - stejne duvod jako u tlacitka "Upravit" na
- * /sablony (viz SablonaUlozisteService).
+ * Po startu appky zavre pripadne zobrazene okno "Spouštím..." (viz SplashOkno,
+ * DokgenApplication.main()) a automaticky otevre vychozi prohlizec na hlavni
+ * stranku, aby appka pusobila jako normalni desktopovy program (viz .exe
+ * balicek pres jpackage), ne jako neco, co je potreba obsluhovat pres
+ * konzoli. Na headless serveru (bez GUI) se preskoci - stejne duvod jako
+ * u tlacitka "Upravit" na /sablony (viz SablonaUlozisteService).
  */
 @Component
 public class StartovaciProhlizecListener {
@@ -29,6 +30,8 @@ public class StartovaciProhlizecListener {
 
     @EventListener(ApplicationReadyEvent.class)
     public void otevriProhlizec() {
+        SplashOkno.zavri();
+
         if (!otevrit || !Desktop.isDesktopSupported() || !Desktop.getDesktop().isSupported(Desktop.Action.BROWSE)) {
             return;
         }

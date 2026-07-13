@@ -20,6 +20,7 @@ import java.util.List;
 
 import static org.mockito.BDDMockito.given;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.forwardedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
@@ -32,7 +33,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * explicitne naimportovana, aby se autorizacni pravidla (hasRole("ADMIN")
  * na /sablony, permitAll na /registrace) opravdu vyhodnotila.
  */
-@WebMvcTest(controllers = {SablonaController.class, RegistraceController.class, PrihlaseniController.class, MojeHesloController.class, NastaveniController.class, ResetHeslaController.class})
+@WebMvcTest(controllers = {SablonaController.class, RegistraceController.class, PrihlaseniController.class, MojeHesloController.class, NastaveniController.class, ResetHeslaController.class, ZdraviController.class})
 @Import(SecurityConfig.class)
 class RoliAOpravneniTest {
 
@@ -123,5 +124,14 @@ class RoliAOpravneniTest {
         mockMvc.perform(get("/nove-heslo").param("token", "cokoliv"))
                 .andExpect(status().isOk())
                 .andExpect(view().name("nove-heslo"));
+    }
+
+    // /zdravi musi jit zavolat bez prihlaseni - hodi se ho anonymne, jeste
+    // pred spustenim appky (viz DokgenApplication.main()).
+    @Test
+    void zdraviJePristupneINeprihlasenemu() throws Exception {
+        mockMvc.perform(get("/zdravi"))
+                .andExpect(status().isOk())
+                .andExpect(content().string("OK"));
     }
 }
