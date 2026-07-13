@@ -28,7 +28,8 @@ public class EmailOdesilatel {
         this.odesilatel = odesilatel;
     }
 
-    public void odesli(String komu, String predmet, String telo) {
+    /** Vraci true, pokud se email podarilo odeslat - volajici (napr. ResetHeslaService) tak muze pri neuspechu nabidnout nahradni cestu. */
+    public boolean odesli(String komu, String predmet, String telo) {
         try {
             SimpleMailMessage zprava = new SimpleMailMessage();
             zprava.setFrom(odesilatel);
@@ -36,8 +37,10 @@ public class EmailOdesilatel {
             zprava.setSubject(predmet);
             zprava.setText(telo);
             mailSender.send(zprava);
+            return true;
         } catch (MailException e) {
             LOG.error("Nepodařilo se odeslat email uživateli \"{}\": {}", komu, e.getMessage());
+            return false;
         }
     }
 }

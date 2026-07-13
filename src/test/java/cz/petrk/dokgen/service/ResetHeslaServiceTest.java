@@ -66,11 +66,22 @@ class ResetHeslaServiceTest {
     @Test
     void pozadejResetUProExistujiciEmailUlozTokenAPosleEmail() {
         given(uzivatelRepository.findByEmail("novak@example.com")).willReturn(Optional.of(uzivatel()));
+        given(emailOdesilatel.odesli(anyString(), anyString(), anyString())).willReturn(true);
 
         service.pozadejReset("novak@example.com", "http://localhost:8080");
 
         verify(resetHeslaRepository).save(any(ResetHesla.class));
         verify(emailOdesilatel).odesli(eq("novak@example.com"), anyString(), anyString());
+    }
+
+    @Test
+    void pozadejResetKdyzEmailSeNepodariOdeslatNevyhodiChybu() {
+        given(uzivatelRepository.findByEmail("novak@example.com")).willReturn(Optional.of(uzivatel()));
+        given(emailOdesilatel.odesli(anyString(), anyString(), anyString())).willReturn(false);
+
+        service.pozadejReset("novak@example.com", "http://localhost:8080");
+
+        verify(resetHeslaRepository).save(any(ResetHesla.class));
     }
 
     @Test

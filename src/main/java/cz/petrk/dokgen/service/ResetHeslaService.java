@@ -4,6 +4,8 @@ import cz.petrk.dokgen.entity.ResetHesla;
 import cz.petrk.dokgen.entity.Uzivatel;
 import cz.petrk.dokgen.repository.ResetHeslaRepository;
 import cz.petrk.dokgen.repository.UzivatelRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.context.MessageSource;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -28,6 +30,7 @@ import java.util.Optional;
 @Service
 public class ResetHeslaService {
 
+    private static final Logger LOG = LoggerFactory.getLogger(ResetHeslaService.class);
     private static final int MIN_DELKA_HESLA = 8;
     private static final Duration PLATNOST = Duration.ofMinutes(45);
 
@@ -73,9 +76,22 @@ public class ResetHeslaService {
             resetHeslaRepository.save(new ResetHesla(uzivatel, hash(token), LocalDateTime.now(hodiny).plus(PLATNOST)));
 
             String odkaz = zakladUrl + "/nove-heslo?token=" + token;
-            emailOdesilatel.odesli(uzivatel.getEmail(),
+            boolean odeslano = emailOdesilatel.odesli(uzivatel.getEmail(),
                     zprava("email.reset.predmet"),
                     zprava("email.reset.telo", odkaz));
+
+            if (!odeslano) {
+                LOG.warn("""
+
+
+                        Email s odkazem na reset hesla se nepodařilo odeslat (SMTP není nastavené
+                        nebo selhalo) - uživatel "{}" si může heslo přesto změnit přes tenhle odkaz:
+
+                            {}
+
+                        Platnost odkazu je 45 minut od vyžádání.
+                        """, uzivatel.getEmail(), odkaz);
+            }
         });
     }
 
