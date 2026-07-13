@@ -31,7 +31,6 @@ jpackage ^
     --app-version 1.0.0 ^
     --vendor "Petr Krupicka" ^
     --description "Generator dokumentu ze sablon" ^
-    --win-console ^
     --dest dist
 
 if errorlevel 1 (
