@@ -17,7 +17,7 @@ import java.util.List;
  * zmeni (nebo, pokud ucet jeste neexistuje, rovnou vytvori) heslo v databazi
  * a hned skonci, bez bootovani weboveho serveru:
  *
- *   mvnw spring-boot:run -Dspring-boot.run.arguments="--zmenit-heslo=jmeno:nove-heslo"
+ *   mvnw spring-boot:run -Dspring-boot.run.arguments="--zmenit-heslo=email:nove-heslo"
  *
  * Pozor: heslo nesmi obsahovat carku (Spring by ji vylozil jako oddelovac
  * vice hodnot argumentu).
@@ -62,22 +62,22 @@ public class ZmenaHeslaRunner implements ApplicationRunner {
         int oddelovac = hodnota.indexOf(':');
 
         if (oddelovac <= 0 || oddelovac == hodnota.length() - 1) {
-            System.out.println("Použití: --zmenit-heslo=uzivatelske-jmeno:nove-heslo");
+            System.out.println("Použití: --zmenit-heslo=email:nove-heslo");
             return 1;
         }
 
-        String jmeno = hodnota.substring(0, oddelovac);
+        String email = hodnota.substring(0, oddelovac);
         String noveHeslo = hodnota.substring(oddelovac + 1);
         String hash = passwordEncoder.encode(noveHeslo);
 
-        Uzivatel uzivatel = uzivatelRepository.findByJmeno(jmeno).orElse(null);
+        Uzivatel uzivatel = uzivatelRepository.findByEmail(email).orElse(null);
         if (uzivatel == null) {
-            uzivatelRepository.save(new Uzivatel(jmeno, hash));
-            System.out.println("Uživatel \"" + jmeno + "\" neexistoval, byl nově vytvořen s tímto heslem.");
+            uzivatelRepository.save(new Uzivatel(email, hash));
+            System.out.println("Uživatel \"" + email + "\" neexistoval, byl nově vytvořen s tímto heslem.");
         } else {
             uzivatel.setHeslo(hash);
             uzivatelRepository.save(uzivatel);
-            System.out.println("Heslo pro uživatele \"" + jmeno + "\" bylo změněno.");
+            System.out.println("Heslo pro uživatele \"" + email + "\" bylo změněno.");
         }
 
         return 0;

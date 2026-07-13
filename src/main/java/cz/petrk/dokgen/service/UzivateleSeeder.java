@@ -56,7 +56,7 @@ public class UzivateleSeeder implements ApplicationRunner {
         doplnChybejiciRoli();
 
         for (UzivateleProperties.Ucet ucet : uzivateleProperties.getUzivatele()) {
-            if (uzivatelRepository.existsByJmeno(ucet.getJmeno())) {
+            if (uzivatelRepository.existsByEmail(ucet.getEmail())) {
                 continue;
             }
 
@@ -73,10 +73,10 @@ public class UzivateleSeeder implements ApplicationRunner {
 
                         Poznač si ho hned teď, appka ho už znovu nevypíše. Appka od teď bere přihlašovací
                         údaje výhradně z databáze - úprava application.properties už nic nezmění.
-                        """, ucet.getJmeno(), heslo);
+                        """, ucet.getEmail(), heslo);
             }
 
-            uzivatelRepository.save(new Uzivatel(ucet.getJmeno(), passwordEncoder.encode(heslo), role(ucet)));
+            uzivatelRepository.save(new Uzivatel(ucet.getEmail(), passwordEncoder.encode(heslo), role(ucet)));
         }
     }
 

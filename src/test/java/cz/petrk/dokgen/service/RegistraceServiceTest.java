@@ -1,5 +1,6 @@
 package cz.petrk.dokgen.service;
 
+import cz.petrk.dokgen.entity.Role;
 import cz.petrk.dokgen.entity.Uzivatel;
 import cz.petrk.dokgen.repository.UzivatelRepository;
 import org.junit.jupiter.api.AfterEach;
@@ -48,32 +49,44 @@ class RegistraceServiceTest {
 
     @Test
     void zaregistrujUlozNovehoUzivateleSZahashovanymHeslem() {
-        given(uzivatelRepository.existsByJmeno("novak")).willReturn(false);
-        given(passwordEncoder.encode("tajneheslo")).willReturn("$2a$hash");
+        given(uzivatelRepository.existsByEmail("novak@example.com")).willReturn(false);
+        given(passwordEncoder.encode("tajneheslo123")).willReturn("$2a$hash");
 
-        service.zaregistruj("novak", "tajneheslo", "tajneheslo", "ASISTENTKA");
+        service.zaregistruj("novak@example.com", "tajneheslo123", "tajneheslo123");
 
         ArgumentCaptor<Uzivatel> zachyceny = ArgumentCaptor.forClass(Uzivatel.class);
         verify(uzivatelRepository).save(zachyceny.capture());
-        assertThat(zachyceny.getValue().getJmeno()).isEqualTo("novak");
+        assertThat(zachyceny.getValue().getEmail()).isEqualTo("novak@example.com");
         assertThat(zachyceny.getValue().getHeslo()).isEqualTo("$2a$hash");
     }
 
     @Test
-    void zaregistrujOriznePrebytecneMezeryVeJmene() {
-        given(uzivatelRepository.existsByJmeno("novak")).willReturn(false);
+    void zaregistrujVzdyUlozRoliAsistentka() {
+        given(uzivatelRepository.existsByEmail("novak@example.com")).willReturn(false);
         given(passwordEncoder.encode(any())).willReturn("hash");
 
-        service.zaregistruj("  novak  ", "tajneheslo", "tajneheslo", "ASISTENTKA");
+        service.zaregistruj("novak@example.com", "tajneheslo123", "tajneheslo123");
 
         ArgumentCaptor<Uzivatel> zachyceny = ArgumentCaptor.forClass(Uzivatel.class);
         verify(uzivatelRepository).save(zachyceny.capture());
-        assertThat(zachyceny.getValue().getJmeno()).isEqualTo("novak");
+        assertThat(zachyceny.getValue().getRole()).isEqualTo(Role.ASISTENTKA);
+    }
+
+    @Test
+    void zaregistrujOriznePrebytecneMezeryVEmailu() {
+        given(uzivatelRepository.existsByEmail("novak@example.com")).willReturn(false);
+        given(passwordEncoder.encode(any())).willReturn("hash");
+
+        service.zaregistruj("  novak@example.com  ", "tajneheslo123", "tajneheslo123");
+
+        ArgumentCaptor<Uzivatel> zachyceny = ArgumentCaptor.forClass(Uzivatel.class);
+        verify(uzivatelRepository).save(zachyceny.capture());
+        assertThat(zachyceny.getValue().getEmail()).isEqualTo("novak@example.com");
     }
 
     @Test
     void zaregistrujSNeshodujicimiSeHesyVyhodiChybu() {
-        assertThatThrownBy(() -> service.zaregistruj("novak", "heslo1234", "jineheslo", "ASISTENTKA"))
+        assertThatThrownBy(() -> service.zaregistruj("novak@example.com", "heslo1234", "jineheslo9"))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("neshodují");
 
@@ -82,7 +95,7 @@ class RegistraceServiceTest {
 
     @Test
     void zaregistrujSPrilisKratkymHeslemVyhodiChybu() {
-        assertThatThrownBy(() -> service.zaregistruj("novak", "abc", "abc", "ASISTENTKA"))
+        assertThatThrownBy(() -> service.zaregistruj("novak@example.com", "abc", "abc"))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("alespoň");
 
@@ -90,56 +103,30 @@ class RegistraceServiceTest {
     }
 
     @Test
-    void zaregistrujSObsazenymJmenemVyhodiChybu() {
-        given(uzivatelRepository.existsByJmeno("admin")).willReturn(true);
+    void zaregistrujSObsazenymEmailemVyhodiChybu() {
+        given(uzivatelRepository.existsByEmail("admin@dokgen.local")).willReturn(true);
 
-        assertThatThrownBy(() -> service.zaregistruj("admin", "tajneheslo", "tajneheslo", "ASISTENTKA"))
+        assertThatThrownBy(() -> service.zaregistruj("admin@dokgen.local", "tajneheslo123", "tajneheslo123"))
                 .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("obsazené");
+                .hasMessageContaining("existuje");
 
         verify(uzivatelRepository, never()).save(any());
     }
 
     @Test
-    void zaregistrujSPrazdnymJmenemVyhodiChybu() {
-        assertThatThrownBy(() -> service.zaregistruj("", "tajneheslo", "tajneheslo", "ASISTENTKA"))
+    void zaregistrujSPrazdnymEmailemVyhodiChybu() {
+        assertThatThrownBy(() -> service.zaregistruj("", "tajneheslo123", "tajneheslo123"))
                 .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("povinné");
+                .hasMessageContaining("povinný");
 
         verify(uzivatelRepository, never()).save(any());
     }
 
     @Test
-    void zaregistrujUlozZadanouRoli() {
-        given(uzivatelRepository.existsByJmeno("novak")).willReturn(false);
-        given(passwordEncoder.encode(any())).willReturn("hash");
-
-        service.zaregistruj("novak", "tajneheslo", "tajneheslo", "ADMIN");
-
-        ArgumentCaptor<Uzivatel> zachyceny = ArgumentCaptor.forClass(Uzivatel.class);
-        verify(uzivatelRepository).save(zachyceny.capture());
-        assertThat(zachyceny.getValue().getRole()).isEqualTo(cz.petrk.dokgen.entity.Role.ADMIN);
-    }
-
-    @Test
-    void zaregistrujRoleJeNecitliveNaVelikostPismenABileZnaky() {
-        given(uzivatelRepository.existsByJmeno("novak")).willReturn(false);
-        given(passwordEncoder.encode(any())).willReturn("hash");
-
-        service.zaregistruj("novak", "tajneheslo", "tajneheslo", " asistentka ");
-
-        ArgumentCaptor<Uzivatel> zachyceny = ArgumentCaptor.forClass(Uzivatel.class);
-        verify(uzivatelRepository).save(zachyceny.capture());
-        assertThat(zachyceny.getValue().getRole()).isEqualTo(cz.petrk.dokgen.entity.Role.ASISTENTKA);
-    }
-
-    @Test
-    void zaregistrujSNeplatnouRoliVyhodiChybu() {
-        given(uzivatelRepository.existsByJmeno("novak")).willReturn(false);
-
-        assertThatThrownBy(() -> service.zaregistruj("novak", "tajneheslo", "tajneheslo", "SUPERVISOR"))
+    void zaregistrujSNeplatnymFormatemEmailuVyhodiChybu() {
+        assertThatThrownBy(() -> service.zaregistruj("novak-bez-zaviname", "tajneheslo123", "tajneheslo123"))
                 .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("roli");
+                .hasMessageContaining("formát");
 
         verify(uzivatelRepository, never()).save(any());
     }

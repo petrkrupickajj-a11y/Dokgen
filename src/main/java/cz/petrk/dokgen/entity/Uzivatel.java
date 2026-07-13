@@ -11,8 +11,8 @@ import jakarta.persistence.Id;
 import java.time.LocalDateTime;
 
 /**
- * Prihlasovaci ucet appky. Heslo se uklada jen jako BCrypt hash (nikdy
- * v plain textu) - viz DokgenUserDetailsService a RegistraceService.
+ * Prihlasovaci ucet appky. Prihlasuje se emailem (viz DokgenUserDetailsService,
+ * SecurityConfig) - heslo se uklada jen jako BCrypt hash (nikdy v plain textu).
  *
  * Role urcuje opravneni (viz SecurityConfig) - dvouargumentovy konstruktor
  * bez role existuje pro zpetnou kompatibilitu (napr. ZmenaHeslaRunner) a
@@ -27,7 +27,7 @@ public class Uzivatel {
     private Long id;
 
     @Column(unique = true)
-    private String jmeno;
+    private String email;
 
     private String heslo;
 
@@ -39,12 +39,12 @@ public class Uzivatel {
     protected Uzivatel() {
     }
 
-    public Uzivatel(String jmeno, String heslo) {
-        this(jmeno, heslo, Role.ADMIN);
+    public Uzivatel(String email, String heslo) {
+        this(email, heslo, Role.ADMIN);
     }
 
-    public Uzivatel(String jmeno, String heslo, Role role) {
-        this.jmeno = jmeno;
+    public Uzivatel(String email, String heslo, Role role) {
+        this.email = email;
         this.heslo = heslo;
         this.role = role;
         this.vytvorenoDne = LocalDateTime.now();
@@ -54,13 +54,13 @@ public class Uzivatel {
         return id;
     }
 
-    public String getJmeno() {
-        return jmeno;
+    public String getEmail() {
+        return email;
     }
 
-    /** Pro samoobslusnou zmenu uzivatelskeho jmena (viz MojeJmenoService). */
-    public void setJmeno(String jmeno) {
-        this.jmeno = jmeno;
+    /** Pro samoobslusnou zmenu emailu (viz MojeEmailService). */
+    public void setEmail(String email) {
+        this.email = email;
     }
 
     public String getHeslo() {

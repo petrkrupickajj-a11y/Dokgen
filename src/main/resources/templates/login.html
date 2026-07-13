@@ -20,11 +20,12 @@
     <div class="panel">
         <div class="chybovy-box" id="login-chyba" role="alert" th:if="${param.error}" th:text="#{login.chyba}">Neplatné uživatelské jméno nebo heslo.</div>
         <div class="info-box" role="status" th:if="${param.odhlaseno}" th:text="#{login.odhlaseno}">Byl jsi úspěšně odhlášen.</div>
-        <div class="info-box" role="status" th:if="${param.jmenoZmeneno}" th:text="#{login.jmeno_zmeneno}">Uživatelské jméno bylo změněno. Přihlas se prosím znovu.</div>
+        <div class="info-box" role="status" th:if="${param.emailZmenen}" th:text="#{login.email_zmenen}">Email byl změněn. Přihlas se prosím znovu.</div>
+        <div class="info-box" role="status" th:if="${param.registrovano}" th:text="#{login.registrovano}">Účet byl vytvořen, teď se můžeš přihlásit.</div>
 
         <form method="post" th:action="@{/login}">
-            <label for="username" th:text="#{pole.uzivatelske_jmeno}">Uživatelské jméno</label>
-            <input type="text" id="username" name="username" autocomplete="username" autofocus required
+            <label for="email" th:text="#{pole.email}">Email</label>
+            <input type="email" id="email" name="email" autocomplete="username" autofocus required
                    th:aria-invalid="${maChybu}"
                    th:aria-describedby="${maChybu} ? 'login-chyba' : null" />
 
@@ -37,6 +38,8 @@
                 <button type="submit" th:text="#{login.prihlasit}">Přihlásit se</button>
             </div>
         </form>
+
+        <a class="zpet zpet-stred" href="/registrace" th:text="#{login.vytvorit_ucet}">Vytvořit účet</a>
     </div>
     <script th:src="@{/jazyky.js}"></script>
 </body>

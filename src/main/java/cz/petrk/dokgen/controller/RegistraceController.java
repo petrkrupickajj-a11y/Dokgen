@@ -22,20 +22,17 @@ public class RegistraceController {
     }
 
     @PostMapping("/registrace")
-    public String zaregistrovat(@RequestParam String jmeno,
+    public String zaregistrovat(@RequestParam String email,
                                  @RequestParam String heslo,
                                  @RequestParam String hesloZnovu,
-                                 @RequestParam(defaultValue = "ASISTENTKA") String role,
                                  RedirectAttributes redirectAttributes) {
         try {
-            registraceService.zaregistruj(jmeno, heslo, hesloZnovu, role);
+            registraceService.zaregistruj(email, heslo, hesloZnovu);
         } catch (IllegalArgumentException e) {
             redirectAttributes.addFlashAttribute("chyba", e.getMessage());
-            redirectAttributes.addFlashAttribute("zadaneJmeno", jmeno);
-            redirectAttributes.addFlashAttribute("zadanaRole", role);
+            redirectAttributes.addFlashAttribute("zadanyEmail", email);
             return "redirect:/registrace";
         }
-        redirectAttributes.addFlashAttribute("uspech", jmeno);
-        return "redirect:/registrace";
+        return "redirect:/login?registrovano";
     }
 }

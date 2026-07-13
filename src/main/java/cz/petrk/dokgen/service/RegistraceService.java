@@ -3,17 +3,16 @@ package cz.petrk.dokgen.service;
 import cz.petrk.dokgen.entity.Role;
 import cz.petrk.dokgen.entity.Uzivatel;
 import cz.petrk.dokgen.repository.UzivatelRepository;
+import cz.petrk.dokgen.util.EmailValidace;
 import org.springframework.context.MessageSource;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.util.Locale;
-
 @Service
 public class RegistraceService {
 
-    private static final int MIN_DELKA_HESLA = 6;
+    private static final int MIN_DELKA_HESLA = 8;
 
     private final UzivatelRepository uzivatelRepository;
     private final PasswordEncoder passwordEncoder;
@@ -30,9 +29,19 @@ public class RegistraceService {
         return zpravy.getMessage(kod, args, LocaleContextHolder.getLocale());
     }
 
-    public void zaregistruj(String jmeno, String heslo, String hesloZnovu, String role) {
-        if (jmeno == null || jmeno.isBlank()) {
-            throw new IllegalArgumentException(zprava("chyba.registrace.jmeno_povinne"));
+    /**
+     * Verejna registrace noveho uctu - vzdy s roli ASISTENTKA. Spravu sablon
+     * a uctu ma jen ADMIN (vestavene ADMIN ucty se seedujou z
+     * application.properties, viz UzivateleSeeder) - verejny formular roli
+     * zamerne nenabizi, aby si nikdo sam neudelil vyssi opravneni.
+     */
+    public void zaregistruj(String email, String heslo, String hesloZnovu) {
+        if (email == null || email.isBlank()) {
+            throw new IllegalArgumentException(zprava("chyba.registrace.email_povinny"));
+        }
+        String ocistenyEmail = email.trim();
+        if (!EmailValidace.jePlatny(ocistenyEmail)) {
+            throw new IllegalArgumentException(zprava("chyba.registrace.email_format"));
         }
         if (heslo == null || heslo.length() < MIN_DELKA_HESLA) {
             throw new IllegalArgumentException(zprava("chyba.registrace.heslo_kratke", MIN_DELKA_HESLA));
@@ -40,20 +49,10 @@ public class RegistraceService {
         if (!heslo.equals(hesloZnovu)) {
             throw new IllegalArgumentException(zprava("chyba.registrace.hesla_neshoda"));
         }
-
-        String ocisteneJmeno = jmeno.trim();
-        if (uzivatelRepository.existsByJmeno(ocisteneJmeno)) {
-            throw new IllegalArgumentException(zprava("chyba.registrace.jmeno_obsazene", ocisteneJmeno));
+        if (uzivatelRepository.existsByEmail(ocistenyEmail)) {
+            throw new IllegalArgumentException(zprava("chyba.registrace.email_obsazeny", ocistenyEmail));
         }
 
-        uzivatelRepository.save(new Uzivatel(ocisteneJmeno, passwordEncoder.encode(heslo), zpracujRoli(role)));
-    }
-
-    private Role zpracujRoli(String role) {
-        try {
-            return Role.valueOf(role.trim().toUpperCase(Locale.ROOT));
-        } catch (IllegalArgumentException | NullPointerException e) {
-            throw new IllegalArgumentException(zprava("chyba.registrace.role_neplatna"));
-        }
+        uzivatelRepository.save(new Uzivatel(ocistenyEmail, passwordEncoder.encode(heslo), Role.ASISTENTKA));
     }
 }

@@ -1,6 +1,6 @@
 package cz.petrk.dokgen.controller;
 
-import cz.petrk.dokgen.service.MojeJmenoService;
+import cz.petrk.dokgen.service.MojeEmailService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.security.core.Authentication;
@@ -15,37 +15,37 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 @Controller
 public class NastaveniController {
 
-    private final MojeJmenoService mojeJmenoService;
+    private final MojeEmailService mojeEmailService;
 
-    public NastaveniController(MojeJmenoService mojeJmenoService) {
-        this.mojeJmenoService = mojeJmenoService;
+    public NastaveniController(MojeEmailService mojeEmailService) {
+        this.mojeEmailService = mojeEmailService;
     }
 
     @GetMapping("/nastaveni")
     public String formular(Authentication authentication, Model model) {
-        model.addAttribute("aktualniJmeno", authentication.getName());
+        model.addAttribute("aktualniEmail", authentication.getName());
         return "nastaveni";
     }
 
-    @PostMapping("/nastaveni/jmeno")
-    public String zmenitJmeno(@RequestParam String soucasneHeslo,
-                               @RequestParam String noveJmeno,
+    @PostMapping("/nastaveni/email")
+    public String zmenitEmail(@RequestParam String soucasneHeslo,
+                               @RequestParam String novyEmail,
                                Authentication authentication,
                                HttpServletRequest request,
                                HttpServletResponse response,
                                RedirectAttributes redirectAttributes) {
         try {
-            mojeJmenoService.zmenJmeno(authentication.getName(), soucasneHeslo, noveJmeno);
+            mojeEmailService.zmenEmail(authentication.getName(), soucasneHeslo, novyEmail);
         } catch (IllegalArgumentException e) {
             redirectAttributes.addFlashAttribute("chyba", e.getMessage());
             return "redirect:/nastaveni";
         }
 
-        // Zmena jmena meni identitu prihlaseneho uctu - stavajici session by
-        // dal ukazovala stare jmeno (SecurityContext se pri zmene v DB sam
+        // Zmena emailu meni identitu prihlaseneho uctu - stavajici session by
+        // dal ukazovala stary email (SecurityContext se pri zmene v DB sam
         // neobnovi), takze uzivatele odhlasime a necháme ho prihlasit se
-        // znovu pod novym jmenem.
+        // znovu pod novym emailem.
         new SecurityContextLogoutHandler().logout(request, response, authentication);
-        return "redirect:/login?jmenoZmeneno";
+        return "redirect:/login?emailZmenen";
     }
 }

@@ -11,13 +11,13 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Jednoducha ochrana proti automatizovanemu zkouseni hesel na /login - drzi
- * si v pameti pocet neuspesnych pokusu na kazde uzivatelske jmeno (i
- * neexistujici - DaoAuthenticationProvider hazi stejnou udalost pro spatne
- * heslo i pro neznamy ucet, takze nejde poznat rozdil a appka tak nikomu
- * nepradzi, ktera jmena v ni existuji). Po prekroceni limitu je jmeno
- * docasne "zamcene" - DokgenUserDetailsService pro nej vrati ucet s
- * priznakem accountLocked, takze Spring Security samo odmitne prihlaseni
- * jeste pred kontrolou hesla (LockedException).
+ * si v pameti pocet neuspesnych pokusu na kazdy email (i neexistujici -
+ * DaoAuthenticationProvider hazi stejnou udalost pro spatne heslo i pro
+ * neznamy ucet, takze nejde poznat rozdil a appka tak nikomu nepradzi,
+ * ktere emaily v ni existuji). Po prekroceni limitu je email docasne
+ * "zamceny" - DokgenUserDetailsService pro nej vrati ucet s priznakem
+ * accountLocked, takze Spring Security samo odmitne prihlaseni jeste pred
+ * kontrolou hesla (LockedException).
  *
  * Zaznamy zijou jen v pameti procesu - restart appky je vynuluje. Pro appku
  * pouzivanou jednotkami lidi v ramci jedne firmy je to dostatecna ochrana
@@ -36,13 +36,13 @@ public class PrihlaseniOmezovac {
         this.hodiny = hodiny;
     }
 
-    public boolean jeZamceno(String jmeno) {
-        Zaznam zaznam = zaznamy.get(normalizuj(jmeno));
+    public boolean jeZamceno(String email) {
+        Zaznam zaznam = zaznamy.get(normalizuj(email));
         return zaznam != null && zaznam.zamcenoDo != null && Instant.now(hodiny).isBefore(zaznam.zamcenoDo);
     }
 
-    public void zaznamenejNeuspech(String jmeno) {
-        zaznamy.compute(normalizuj(jmeno), (klic, zaznam) -> {
+    public void zaznamenejNeuspech(String email) {
+        zaznamy.compute(normalizuj(email), (klic, zaznam) -> {
             Zaznam aktualni = zaznam == null ? new Zaznam() : zaznam;
             aktualni.pocetNeuspechu++;
             if (aktualni.pocetNeuspechu >= MAX_NEUSPESNYCH_POKUSU) {
@@ -53,12 +53,12 @@ public class PrihlaseniOmezovac {
         });
     }
 
-    public void zaznamenejUspech(String jmeno) {
-        zaznamy.remove(normalizuj(jmeno));
+    public void zaznamenejUspech(String email) {
+        zaznamy.remove(normalizuj(email));
     }
 
-    private String normalizuj(String jmeno) {
-        return jmeno == null ? "" : jmeno.trim().toLowerCase(Locale.ROOT);
+    private String normalizuj(String email) {
+        return email == null ? "" : email.trim().toLowerCase(Locale.ROOT);
     }
 
     private static final class Zaznam {

@@ -17,25 +17,23 @@ import java.time.Clock;
  * Cela appka je za prihlasenim - obsahuje osobni udaje klientu (jmena,
  * adresy, telefony, ICO), takze nesmi byt volne pristupna komukoliv na siti.
  *
- * Prihlasovaci ucty se ctou z databaze (entita Uzivatel, viz
- * DokgenUserDetailsService) - jednak vestavene z application.properties
+ * Prihlasovacim identifikatorem je email (formLogin.usernameParameter, viz
+ * nize) - prihlasovaci ucty se ctou z databaze (entita Uzivatel, viz
+ * DokgenUserDetailsService), jednak vestavene z application.properties
  * (UzivateleSeeder je pri prvnim startu naplni do DB), jednak nove pridane
- * pres /registrace. /registrace vyzaduje prihlaseni JAKO ADMIN (viz
- * autorizace nize) - jde tak jen o zpusob, jak uz prihlaseny ADMIN muze
- * pridat ucet kolegovi, ne o verejnou samoobsluznou registraci; appka na
- * ni navic nikde v navigaci neodkazuje, kdo ji chce pouzit, musi znat
- * primo URL. Role uctu (ADMIN/ASISTENTKA, viz Role) omezuje opravneni -
- * podrobnosti nize.
+ * pres verejnou /registrace. Verejna registrace vzdy zaklada ucet s roli
+ * ASISTENTKA (viz RegistraceService) - roli si nikdo nemuze zvolit sam,
+ * aby si nemohl udelit vyssi opravneni. Role uctu (ADMIN/ASISTENTKA, viz
+ * Role) omezuje opravneni - podrobnosti nize.
  *
  * CSRF ochrana zustava zapnuta (Spring Security default) - Thymeleaf do
  * kazdeho formulare s th:action automaticky vlozi skryte CSRF pole, takze
  * existujici formulare (ulozit, smazat, generovat, sablony...) nepotrebuji
  * zadnou upravu.
  *
- * Role (viz Role, DokgenUserDetailsService) omezuji /sablony a /registrace
- * jen na ADMIN - ASISTENTKA se k nim nedostane, misto Whitelabel chyby ji
- * accessDeniedHandler posle na srozumitelnou stranku /pristup-odepren
- * (viz PrihlaseniController).
+ * Role (viz Role, DokgenUserDetailsService) omezuje /sablony jen na ADMIN -
+ * ASISTENTKA se k nim nedostane, misto Whitelabel chyby ji accessDeniedHandler
+ * posle na srozumitelnou stranku /pristup-odepren (viz PrihlaseniController).
  */
 @Configuration
 @EnableWebSecurity
@@ -65,24 +63,24 @@ public class SecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
                 .authorizeHttpRequests(autorizace -> autorizace
-                        // Staticky CSS a prepinac jazyka musi jit natahnout i na neprihlasene
-                        // prihlasovaci strance, jinak by /login vypadal nestylovany a nesel by na
-                        // nem prepnout jazyk jeste pred prihlasenim.
+                        // Staticky CSS a prepinac jazyka musi jit natahnout i na neprihlasenych
+                        // strankach (login, registrace, zapomenute heslo), jinak by byly
+                        // nestylovane a neslo by na nich prepnout jazyk pred prihlasenim.
                         //
                         // /login je tu explicitne navic, i kdyz ho formLogin(...).permitAll() nize
-                        // taky povoluje - Spring Security toti registruje permitAll pro presnou
-                        // cestu bez ohledu na query retezec normalne funguje, ale kombinace s
-                        // LocaleChangeInterceptor (parametr ?lang=) na GET /login vedla k
-                        // neocekavanemu presmerovani (ExceptionTranslationFilter to bralo jako
-                        // neautorizovany pozadavek). Vlastni requestMatchers tady to spolehlive
-                        // obejde.
-                        .requestMatchers("/styles.css", "/jazyky.js", "/login").permitAll()
-                        // Sprava sablon a pridavani uctu jde jen ADMINovi (viz Role) - ASISTENTKA
-                        // smi jen spravovat klienty a generovat dokumenty.
-                        .requestMatchers("/sablony", "/sablony/**", "/registrace").hasRole("ADMIN")
+                        // taky povoluje - Spring Security registruje permitAll pro presnou cestu
+                        // bez ohledu na query retezec, ale kombinace s LocaleChangeInterceptor
+                        // (parametr ?lang=) na GET /login vedla k neocekavanemu presmerovani
+                        // (ExceptionTranslationFilter to bralo jako neautorizovany pozadavek).
+                        // Vlastni requestMatchers tady to spolehlive obejde.
+                        .requestMatchers("/styles.css", "/jazyky.js", "/login", "/registrace").permitAll()
+                        // Sprava sablon jde jen ADMINovi (viz Role) - ASISTENTKA smi jen
+                        // spravovat klienty a generovat dokumenty.
+                        .requestMatchers("/sablony", "/sablony/**").hasRole("ADMIN")
                         .anyRequest().authenticated())
                 .formLogin(formLogin -> formLogin
                         .loginPage("/login")
+                        .usernameParameter("email")
                         .defaultSuccessUrl("/", true)
                         .permitAll())
                 .logout(logout -> logout

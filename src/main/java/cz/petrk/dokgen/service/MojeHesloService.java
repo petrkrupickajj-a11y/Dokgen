@@ -10,7 +10,7 @@ import org.springframework.stereotype.Service;
 @Service
 public class MojeHesloService {
 
-    private static final int MIN_DELKA_HESLA = 6;
+    private static final int MIN_DELKA_HESLA = 8;
 
     private final UzivatelRepository uzivatelRepository;
     private final PasswordEncoder passwordEncoder;
@@ -28,9 +28,9 @@ public class MojeHesloService {
     }
 
     /** Zmeni heslo prihlaseneho uzivatele - vyzaduje spravne zadane soucasne heslo. */
-    public void zmenHeslo(String jmeno, String soucasneHeslo, String noveHeslo, String noveHesloZnovu) {
-        Uzivatel uzivatel = uzivatelRepository.findByJmeno(jmeno)
-                .orElseThrow(() -> new IllegalStateException("Přihlášený uživatel \"" + jmeno + "\" nebyl nalezen."));
+    public void zmenHeslo(String email, String soucasneHeslo, String noveHeslo, String noveHesloZnovu) {
+        Uzivatel uzivatel = uzivatelRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalStateException("Přihlášený uživatel \"" + email + "\" nebyl nalezen."));
 
         if (!passwordEncoder.matches(soucasneHeslo == null ? "" : soucasneHeslo, uzivatel.getHeslo())) {
             throw new IllegalArgumentException(zprava("chyba.moje_heslo.soucasne_nesouhlasi"));

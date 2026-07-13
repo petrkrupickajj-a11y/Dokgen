@@ -42,11 +42,11 @@ class ZmenaHeslaRunnerTest {
 
     @Test
     void existujicimuUzivateliZmeniHeslo() {
-        Uzivatel existujici = new Uzivatel("admin", "staryHash");
-        given(uzivatelRepository.findByJmeno("admin")).willReturn(Optional.of(existujici));
+        Uzivatel existujici = new Uzivatel("admin@dokgen.local", "staryHash");
+        given(uzivatelRepository.findByEmail("admin@dokgen.local")).willReturn(Optional.of(existujici));
         given(passwordEncoder.encode("noveheslo")).willReturn("novyHash");
 
-        Integer kod = runner.zpracujVolbu(new DefaultApplicationArguments("--zmenit-heslo=admin:noveheslo"));
+        Integer kod = runner.zpracujVolbu(new DefaultApplicationArguments("--zmenit-heslo=admin@dokgen.local:noveheslo"));
 
         assertThat(kod).isEqualTo(0);
         ArgumentCaptor<Uzivatel> zachyceny = ArgumentCaptor.forClass(Uzivatel.class);
@@ -56,15 +56,15 @@ class ZmenaHeslaRunnerTest {
 
     @Test
     void neexistujicimuUzivateliVytvoriNovyUcet() {
-        given(uzivatelRepository.findByJmeno("novak")).willReturn(Optional.empty());
+        given(uzivatelRepository.findByEmail("novak@example.com")).willReturn(Optional.empty());
         given(passwordEncoder.encode("noveheslo")).willReturn("novyHash");
 
-        Integer kod = runner.zpracujVolbu(new DefaultApplicationArguments("--zmenit-heslo=novak:noveheslo"));
+        Integer kod = runner.zpracujVolbu(new DefaultApplicationArguments("--zmenit-heslo=novak@example.com:noveheslo"));
 
         assertThat(kod).isEqualTo(0);
         ArgumentCaptor<Uzivatel> zachyceny = ArgumentCaptor.forClass(Uzivatel.class);
         verify(uzivatelRepository).save(zachyceny.capture());
-        assertThat(zachyceny.getValue().getJmeno()).isEqualTo("novak");
+        assertThat(zachyceny.getValue().getEmail()).isEqualTo("novak@example.com");
         assertThat(zachyceny.getValue().getHeslo()).isEqualTo("novyHash");
     }
 
@@ -77,7 +77,7 @@ class ZmenaHeslaRunnerTest {
     }
 
     @Test
-    void prazdneJmenoVraciChybovyKodANicNeuklada() {
+    void prazdnyEmailVraciChybovyKodANicNeuklada() {
         Integer kod = runner.zpracujVolbu(new DefaultApplicationArguments("--zmenit-heslo=:noveheslo"));
 
         assertThat(kod).isEqualTo(1);
@@ -86,7 +86,7 @@ class ZmenaHeslaRunnerTest {
 
     @Test
     void prazdneHesloVraciChybovyKodANicNeuklada() {
-        Integer kod = runner.zpracujVolbu(new DefaultApplicationArguments("--zmenit-heslo=novak:"));
+        Integer kod = runner.zpracujVolbu(new DefaultApplicationArguments("--zmenit-heslo=novak@example.com:"));
 
         assertThat(kod).isEqualTo(1);
         verify(uzivatelRepository, never()).save(any());

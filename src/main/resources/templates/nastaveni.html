@@ -26,27 +26,27 @@
     </nav>
 
     <h1 id="hlavni-obsah" th:text="#{nastaveni.h1}">Nastavení</h1>
-    <p class="podnadpis" th:text="#{nastaveni.aktualni_jmeno(${aktualniJmeno})}">Aktuální uživatelské jméno: admin</p>
+    <p class="podnadpis" th:text="#{nastaveni.aktualni_email(${aktualniEmail})}">Aktuální email: admin@dokgen.local</p>
 
     <div class="panel">
-        <h2 th:text="#{nastaveni.jmeno.nadpis}">Uživatelské jméno</h2>
+        <h2 th:text="#{nastaveni.email.nadpis}">Email</h2>
         <div class="chybovy-box" id="nastaveni-chyba" role="alert" th:if="${chyba}" th:text="${chyba}"></div>
 
-        <form method="post" th:action="@{/nastaveni/jmeno}">
+        <form method="post" th:action="@{/nastaveni/email}">
             <label for="soucasneHeslo" th:text="#{pole.soucasne_heslo}">Současné heslo</label>
             <input type="password" id="soucasneHeslo" name="soucasneHeslo" autocomplete="current-password" required
                    th:aria-invalid="${chyba != null}"
                    th:aria-describedby="${chyba} ? 'nastaveni-chyba' : null" />
 
-            <label for="noveJmeno" th:text="#{pole.nove_uzivatelske_jmeno}">Nové uživatelské jméno</label>
-            <input type="text" id="noveJmeno" name="noveJmeno" autocomplete="username" required
-                   th:value="${aktualniJmeno}"
+            <label for="novyEmail" th:text="#{pole.novy_email}">Nový email</label>
+            <input type="email" id="novyEmail" name="novyEmail" autocomplete="username" required
+                   th:value="${aktualniEmail}"
                    th:aria-invalid="${chyba != null}"
                    th:aria-describedby="${chyba} ? 'nastaveni-chyba' : null" />
-            <p th:text="#{nastaveni.jmeno.napoveda}">Po změně jména se budeš muset znovu přihlásit.</p>
+            <p th:text="#{nastaveni.email.napoveda}">Po změně emailu se budeš muset znovu přihlásit.</p>
 
             <div class="akce">
-                <button type="submit" th:text="#{nastaveni.jmeno.zmenit}">Změnit jméno</button>
+                <button type="submit" th:text="#{nastaveni.email.zmenit}">Změnit email</button>
             </div>
         </form>
     </div>

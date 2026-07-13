@@ -36,57 +36,43 @@ class RegistraceControllerTest {
     }
 
     @Test
-    void zaregistrovatPlatneUdajePresmerujeSUspechem() throws Exception {
+    void zaregistrovatPlatneUdajePresmerujeNaLoginSPotvrzenim() throws Exception {
         mockMvc.perform(post("/registrace").with(csrf())
-                        .param("jmeno", "novak")
-                        .param("heslo", "tajneheslo")
-                        .param("hesloZnovu", "tajneheslo"))
+                        .param("email", "novak@example.com")
+                        .param("heslo", "tajneheslo123")
+                        .param("hesloZnovu", "tajneheslo123"))
                 .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/registrace"))
-                .andExpect(flash().attribute("uspech", "novak"));
+                .andExpect(redirectedUrl("/login?registrovano"));
 
-        verify(registraceService).zaregistruj("novak", "tajneheslo", "tajneheslo", "ASISTENTKA");
-    }
-
-    @Test
-    void zaregistrovatSVybranouRoliJiPredaSluzbe() throws Exception {
-        mockMvc.perform(post("/registrace").with(csrf())
-                        .param("jmeno", "novak")
-                        .param("heslo", "tajneheslo")
-                        .param("hesloZnovu", "tajneheslo")
-                        .param("role", "ADMIN"))
-                .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/registrace"));
-
-        verify(registraceService).zaregistruj("novak", "tajneheslo", "tajneheslo", "ADMIN");
+        verify(registraceService).zaregistruj("novak@example.com", "tajneheslo123", "tajneheslo123");
     }
 
     @Test
     void zaregistrovatSNeshodujicimiSeHesyVratiChybuVeFlashAtributu() throws Exception {
         willThrow(new IllegalArgumentException("Hesla se neshodují."))
-                .given(registraceService).zaregistruj("novak", "heslo1", "heslo2", "ASISTENTKA");
+                .given(registraceService).zaregistruj("novak@example.com", "heslo1", "heslo2");
 
         mockMvc.perform(post("/registrace").with(csrf())
-                        .param("jmeno", "novak")
+                        .param("email", "novak@example.com")
                         .param("heslo", "heslo1")
                         .param("hesloZnovu", "heslo2"))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/registrace"))
                 .andExpect(flash().attribute("chyba", "Hesla se neshodují."))
-                .andExpect(flash().attribute("zadaneJmeno", "novak"));
+                .andExpect(flash().attribute("zadanyEmail", "novak@example.com"));
     }
 
     @Test
-    void zaregistrovatSObsazenymJmenemVratiChybuVeFlashAtributu() throws Exception {
-        willThrow(new IllegalArgumentException("Uživatelské jméno \"admin\" už je obsazené."))
-                .given(registraceService).zaregistruj("admin", "tajneheslo", "tajneheslo", "ASISTENTKA");
+    void zaregistrovatSObsazenymEmailemVratiChybuVeFlashAtributu() throws Exception {
+        willThrow(new IllegalArgumentException("Účet s emailem \"admin@dokgen.local\" už existuje."))
+                .given(registraceService).zaregistruj("admin@dokgen.local", "tajneheslo123", "tajneheslo123");
 
         mockMvc.perform(post("/registrace").with(csrf())
-                        .param("jmeno", "admin")
-                        .param("heslo", "tajneheslo")
-                        .param("hesloZnovu", "tajneheslo"))
+                        .param("email", "admin@dokgen.local")
+                        .param("heslo", "tajneheslo123")
+                        .param("hesloZnovu", "tajneheslo123"))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/registrace"))
-                .andExpect(flash().attribute("chyba", "Uživatelské jméno \"admin\" už je obsazené."));
+                .andExpect(flash().attribute("chyba", "Účet s emailem \"admin@dokgen.local\" už existuje."));
     }
 }

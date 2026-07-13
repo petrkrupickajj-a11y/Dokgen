@@ -46,16 +46,16 @@ class MojeHesloServiceTest {
     }
 
     private Uzivatel uzivatel() {
-        return new Uzivatel("admin", "$2a$stareHash", Role.ADMIN);
+        return new Uzivatel("admin@dokgen.local", "$2a$stareHash", Role.ADMIN);
     }
 
     @Test
     void zmenHesloUlozNovyHashKdySoucasneHesloSouhlasi() {
-        given(uzivatelRepository.findByJmeno("admin")).willReturn(Optional.of(uzivatel()));
+        given(uzivatelRepository.findByEmail("admin@dokgen.local")).willReturn(Optional.of(uzivatel()));
         given(passwordEncoder.matches("stareheslo", "$2a$stareHash")).willReturn(true);
-        given(passwordEncoder.encode("noveheslo")).willReturn("$2a$novyHash");
+        given(passwordEncoder.encode("noveheslo123")).willReturn("$2a$novyHash");
 
-        service.zmenHeslo("admin", "stareheslo", "noveheslo", "noveheslo");
+        service.zmenHeslo("admin@dokgen.local", "stareheslo", "noveheslo123", "noveheslo123");
 
         ArgumentCaptor<Uzivatel> zachyceny = ArgumentCaptor.forClass(Uzivatel.class);
         verify(uzivatelRepository).save(zachyceny.capture());
@@ -64,10 +64,10 @@ class MojeHesloServiceTest {
 
     @Test
     void zmenHesloSNespravnymSoucasnymHeslemVyhodiChybu() {
-        given(uzivatelRepository.findByJmeno("admin")).willReturn(Optional.of(uzivatel()));
+        given(uzivatelRepository.findByEmail("admin@dokgen.local")).willReturn(Optional.of(uzivatel()));
         given(passwordEncoder.matches("spatneheslo", "$2a$stareHash")).willReturn(false);
 
-        assertThatThrownBy(() -> service.zmenHeslo("admin", "spatneheslo", "noveheslo", "noveheslo"))
+        assertThatThrownBy(() -> service.zmenHeslo("admin@dokgen.local", "spatneheslo", "noveheslo123", "noveheslo123"))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("nesouhlasí");
 
@@ -76,10 +76,10 @@ class MojeHesloServiceTest {
 
     @Test
     void zmenHesloSPrilisKratkymNovymHeslemVyhodiChybu() {
-        given(uzivatelRepository.findByJmeno("admin")).willReturn(Optional.of(uzivatel()));
+        given(uzivatelRepository.findByEmail("admin@dokgen.local")).willReturn(Optional.of(uzivatel()));
         given(passwordEncoder.matches("stareheslo", "$2a$stareHash")).willReturn(true);
 
-        assertThatThrownBy(() -> service.zmenHeslo("admin", "stareheslo", "abc", "abc"))
+        assertThatThrownBy(() -> service.zmenHeslo("admin@dokgen.local", "stareheslo", "abc", "abc"))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("alespoň");
 
@@ -88,10 +88,10 @@ class MojeHesloServiceTest {
 
     @Test
     void zmenHesloSNeshodujicimiSeNovymiHeslyVyhodiChybu() {
-        given(uzivatelRepository.findByJmeno("admin")).willReturn(Optional.of(uzivatel()));
+        given(uzivatelRepository.findByEmail("admin@dokgen.local")).willReturn(Optional.of(uzivatel()));
         given(passwordEncoder.matches("stareheslo", "$2a$stareHash")).willReturn(true);
 
-        assertThatThrownBy(() -> service.zmenHeslo("admin", "stareheslo", "noveheslo1", "noveheslo2"))
+        assertThatThrownBy(() -> service.zmenHeslo("admin@dokgen.local", "stareheslo", "noveheslo1", "noveheslo2"))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("neshodují");
 

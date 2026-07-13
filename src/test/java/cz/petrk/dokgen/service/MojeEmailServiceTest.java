@@ -22,11 +22,11 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
-class MojeJmenoServiceTest {
+class MojeEmailServiceTest {
 
     private UzivatelRepository uzivatelRepository;
     private PasswordEncoder passwordEncoder;
-    private MojeJmenoService service;
+    private MojeEmailService service;
 
     @BeforeEach
     void setUp() {
@@ -37,7 +37,7 @@ class MojeJmenoServiceTest {
 
         uzivatelRepository = Mockito.mock(UzivatelRepository.class);
         passwordEncoder = Mockito.mock(PasswordEncoder.class);
-        service = new MojeJmenoService(uzivatelRepository, passwordEncoder, zpravy);
+        service = new MojeEmailService(uzivatelRepository, passwordEncoder, zpravy);
     }
 
     @AfterEach
@@ -46,42 +46,42 @@ class MojeJmenoServiceTest {
     }
 
     private Uzivatel uzivatel() {
-        return new Uzivatel("admin", "$2a$stareHash", Role.ADMIN);
+        return new Uzivatel("admin@dokgen.local", "$2a$stareHash", Role.ADMIN);
     }
 
     @Test
-    void zmenJmenoUlozNoveJmenoKdyzHesloSouhlasiAJmenoJeVolne() {
-        given(uzivatelRepository.findByJmeno("admin")).willReturn(Optional.of(uzivatel()));
+    void zmenEmailUlozNovyEmailKdyzHesloSouhlasiAEmailJeVolny() {
+        given(uzivatelRepository.findByEmail("admin@dokgen.local")).willReturn(Optional.of(uzivatel()));
         given(passwordEncoder.matches("heslo", "$2a$stareHash")).willReturn(true);
-        given(uzivatelRepository.existsByJmeno("novak")).willReturn(false);
+        given(uzivatelRepository.existsByEmail("novy@example.com")).willReturn(false);
 
-        String vysledek = service.zmenJmeno("admin", "heslo", "novak");
+        String vysledek = service.zmenEmail("admin@dokgen.local", "heslo", "novy@example.com");
 
-        assertThat(vysledek).isEqualTo("novak");
+        assertThat(vysledek).isEqualTo("novy@example.com");
         ArgumentCaptor<Uzivatel> zachyceny = ArgumentCaptor.forClass(Uzivatel.class);
         verify(uzivatelRepository).save(zachyceny.capture());
-        assertThat(zachyceny.getValue().getJmeno()).isEqualTo("novak");
+        assertThat(zachyceny.getValue().getEmail()).isEqualTo("novy@example.com");
     }
 
     @Test
-    void zmenJmenoOriznePrebytecneMezery() {
-        given(uzivatelRepository.findByJmeno("admin")).willReturn(Optional.of(uzivatel()));
+    void zmenEmailOriznePrebytecneMezery() {
+        given(uzivatelRepository.findByEmail("admin@dokgen.local")).willReturn(Optional.of(uzivatel()));
         given(passwordEncoder.matches("heslo", "$2a$stareHash")).willReturn(true);
-        given(uzivatelRepository.existsByJmeno("novak")).willReturn(false);
+        given(uzivatelRepository.existsByEmail("novy@example.com")).willReturn(false);
 
-        service.zmenJmeno("admin", "heslo", "  novak  ");
+        service.zmenEmail("admin@dokgen.local", "heslo", "  novy@example.com  ");
 
         ArgumentCaptor<Uzivatel> zachyceny = ArgumentCaptor.forClass(Uzivatel.class);
         verify(uzivatelRepository).save(zachyceny.capture());
-        assertThat(zachyceny.getValue().getJmeno()).isEqualTo("novak");
+        assertThat(zachyceny.getValue().getEmail()).isEqualTo("novy@example.com");
     }
 
     @Test
-    void zmenJmenoSNespravnymHeslemVyhodiChybu() {
-        given(uzivatelRepository.findByJmeno("admin")).willReturn(Optional.of(uzivatel()));
+    void zmenEmailSNespravnymHeslemVyhodiChybu() {
+        given(uzivatelRepository.findByEmail("admin@dokgen.local")).willReturn(Optional.of(uzivatel()));
         given(passwordEncoder.matches("spatneheslo", "$2a$stareHash")).willReturn(false);
 
-        assertThatThrownBy(() -> service.zmenJmeno("admin", "spatneheslo", "novak"))
+        assertThatThrownBy(() -> service.zmenEmail("admin@dokgen.local", "spatneheslo", "novy@example.com"))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("nesouhlasí");
 
@@ -89,38 +89,38 @@ class MojeJmenoServiceTest {
     }
 
     @Test
-    void zmenJmenoSPrazdnymNovymJmenemVyhodiChybu() {
-        given(uzivatelRepository.findByJmeno("admin")).willReturn(Optional.of(uzivatel()));
+    void zmenEmailSNeplatnymFormatemVyhodiChybu() {
+        given(uzivatelRepository.findByEmail("admin@dokgen.local")).willReturn(Optional.of(uzivatel()));
         given(passwordEncoder.matches("heslo", "$2a$stareHash")).willReturn(true);
 
-        assertThatThrownBy(() -> service.zmenJmeno("admin", "heslo", "   "))
+        assertThatThrownBy(() -> service.zmenEmail("admin@dokgen.local", "heslo", "neplatny-email"))
                 .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("povinné");
+                .hasMessageContaining("formát");
 
         verify(uzivatelRepository, never()).save(any());
     }
 
     @Test
-    void zmenJmenoSObsazenymJmenemVyhodiChybu() {
-        given(uzivatelRepository.findByJmeno("admin")).willReturn(Optional.of(uzivatel()));
+    void zmenEmailSObsazenymEmailemVyhodiChybu() {
+        given(uzivatelRepository.findByEmail("admin@dokgen.local")).willReturn(Optional.of(uzivatel()));
         given(passwordEncoder.matches("heslo", "$2a$stareHash")).willReturn(true);
-        given(uzivatelRepository.existsByJmeno("asistentka")).willReturn(true);
+        given(uzivatelRepository.existsByEmail("asistentka@dokgen.local")).willReturn(true);
 
-        assertThatThrownBy(() -> service.zmenJmeno("admin", "heslo", "asistentka"))
+        assertThatThrownBy(() -> service.zmenEmail("admin@dokgen.local", "heslo", "asistentka@dokgen.local"))
                 .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("obsazené");
+                .hasMessageContaining("existuje");
 
         verify(uzivatelRepository, never()).save(any());
     }
 
     @Test
-    void zmenJmenoNaStejneJmenoNepovazujeSeZaObsazene() {
-        given(uzivatelRepository.findByJmeno("admin")).willReturn(Optional.of(uzivatel()));
+    void zmenEmailNaStejnyEmailNepovazujeSeZaObsazeny() {
+        given(uzivatelRepository.findByEmail("admin@dokgen.local")).willReturn(Optional.of(uzivatel()));
         given(passwordEncoder.matches("heslo", "$2a$stareHash")).willReturn(true);
 
-        service.zmenJmeno("admin", "heslo", "admin");
+        service.zmenEmail("admin@dokgen.local", "heslo", "admin@dokgen.local");
 
-        verify(uzivatelRepository, never()).existsByJmeno(any());
+        verify(uzivatelRepository, never()).existsByEmail(any());
         verify(uzivatelRepository).save(any());
     }
 }

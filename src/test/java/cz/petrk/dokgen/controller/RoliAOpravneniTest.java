@@ -3,8 +3,8 @@ package cz.petrk.dokgen.controller;
 import cz.petrk.dokgen.config.SecurityConfig;
 import cz.petrk.dokgen.repository.SablonaRepository;
 import cz.petrk.dokgen.service.DocumentGeneratorService;
+import cz.petrk.dokgen.service.MojeEmailService;
 import cz.petrk.dokgen.service.MojeHesloService;
-import cz.petrk.dokgen.service.MojeJmenoService;
 import cz.petrk.dokgen.service.RegistraceService;
 import cz.petrk.dokgen.service.SablonaUlozisteService;
 import org.junit.jupiter.api.Test;
@@ -29,7 +29,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * @WebMvcTest slice bez SecurityConfig, kde @WithMockUser prochazi bez
  * ohledu na roli (jen Boot default "authenticated"). Tady je SecurityConfig
  * explicitne naimportovana, aby se autorizacni pravidla (hasRole("ADMIN")
- * na /sablony a /registrace) opravdu vyhodnotila.
+ * na /sablony, permitAll na /registrace) opravdu vyhodnotila.
  */
 @WebMvcTest(controllers = {SablonaController.class, RegistraceController.class, PrihlaseniController.class, MojeHesloController.class, NastaveniController.class})
 @Import(SecurityConfig.class)
@@ -54,7 +54,7 @@ class RoliAOpravneniTest {
     private MojeHesloService mojeHesloService;
 
     @MockBean
-    private MojeJmenoService mojeJmenoService;
+    private MojeEmailService mojeEmailService;
 
     @Test
     @WithMockUser(roles = "ADMIN")
@@ -78,20 +78,13 @@ class RoliAOpravneniTest {
                 .andExpect(forwardedUrl("/pristup-odepren"));
     }
 
+    // Registrace je verejna - i uplne neprihlaseny navstevnik se musi dostat
+    // na formular (viz SecurityConfig .permitAll na /registrace).
     @Test
-    @WithMockUser(roles = "ADMIN")
-    void adminMaPristupNaRegistraci() throws Exception {
+    void registraceJePristupnaINeprihlasenemu() throws Exception {
         mockMvc.perform(get("/registrace"))
                 .andExpect(status().isOk())
                 .andExpect(view().name("registrace"));
-    }
-
-    @Test
-    @WithMockUser(roles = "ASISTENTKA")
-    void asistentkaNemaPristupNaRegistraci() throws Exception {
-        mockMvc.perform(get("/registrace"))
-                .andExpect(status().isForbidden())
-                .andExpect(forwardedUrl("/pristup-odepren"));
     }
 
     // Na rozdil od /sablony a /registrace neni /moje-heslo omezene na ADMIN -
@@ -106,7 +99,7 @@ class RoliAOpravneniTest {
 
     // Stejny princip jako /moje-heslo - stranka Nastaveni neni omezena na ADMIN.
     @Test
-    @WithMockUser(username = "asistentka", roles = "ASISTENTKA")
+    @WithMockUser(username = "asistentka@dokgen.local", roles = "ASISTENTKA")
     void asistentkaMaPristupNaNastaveni() throws Exception {
         mockMvc.perform(get("/nastaveni"))
                 .andExpect(status().isOk())

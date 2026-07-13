@@ -1,6 +1,6 @@
 package cz.petrk.dokgen.controller;
 
-import cz.petrk.dokgen.service.MojeJmenoService;
+import cz.petrk.dokgen.service.MojeEmailService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -20,42 +20,42 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 
 @WebMvcTest(NastaveniController.class)
-@WithMockUser(username = "admin")
+@WithMockUser(username = "admin@dokgen.local")
 class NastaveniControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
 
     @MockBean
-    private MojeJmenoService mojeJmenoService;
+    private MojeEmailService mojeEmailService;
 
     @Test
-    void formularZobraziStrankuNastaveniSAktualnimJmenem() throws Exception {
+    void formularZobraziStrankuNastaveniSAktualnimEmailem() throws Exception {
         mockMvc.perform(get("/nastaveni"))
                 .andExpect(status().isOk())
                 .andExpect(view().name("nastaveni"))
-                .andExpect(model().attribute("aktualniJmeno", "admin"));
+                .andExpect(model().attribute("aktualniEmail", "admin@dokgen.local"));
     }
 
     @Test
-    void zmenitJmenoPlatneUdajePresmerujeNaLoginSPozadavkemZnovuPrihlaseni() throws Exception {
-        mockMvc.perform(post("/nastaveni/jmeno").with(csrf())
+    void zmenitEmailPlatneUdajePresmerujeNaLoginSPozadavkemZnovuPrihlaseni() throws Exception {
+        mockMvc.perform(post("/nastaveni/email").with(csrf())
                         .param("soucasneHeslo", "heslo")
-                        .param("noveJmeno", "novak"))
+                        .param("novyEmail", "novak@example.com"))
                 .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/login?jmenoZmeneno"));
+                .andExpect(redirectedUrl("/login?emailZmenen"));
 
-        verify(mojeJmenoService).zmenJmeno("admin", "heslo", "novak");
+        verify(mojeEmailService).zmenEmail("admin@dokgen.local", "heslo", "novak@example.com");
     }
 
     @Test
-    void zmenitJmenoSNespravnymHeslemVratiChybuVeFlashAtributu() throws Exception {
+    void zmenitEmailSNespravnymHeslemVratiChybuVeFlashAtributu() throws Exception {
         willThrow(new IllegalArgumentException("Heslo nesouhlasí."))
-                .given(mojeJmenoService).zmenJmeno("admin", "spatneheslo", "novak");
+                .given(mojeEmailService).zmenEmail("admin@dokgen.local", "spatneheslo", "novak@example.com");
 
-        mockMvc.perform(post("/nastaveni/jmeno").with(csrf())
+        mockMvc.perform(post("/nastaveni/email").with(csrf())
                         .param("soucasneHeslo", "spatneheslo")
-                        .param("noveJmeno", "novak"))
+                        .param("novyEmail", "novak@example.com"))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/nastaveni"))
                 .andExpect(flash().attribute("chyba", "Heslo nesouhlasí."));

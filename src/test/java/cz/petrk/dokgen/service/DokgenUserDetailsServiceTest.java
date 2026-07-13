@@ -30,51 +30,51 @@ class DokgenUserDetailsServiceTest {
 
     @Test
     void nezamcenyUcetJeVracenAJakoOdemceny() {
-        given(uzivatelRepository.findByJmeno("admin")).willReturn(Optional.of(new Uzivatel("admin", "$2a$hash")));
-        given(prihlaseniOmezovac.jeZamceno("admin")).willReturn(false);
+        given(uzivatelRepository.findByEmail("admin@dokgen.local")).willReturn(Optional.of(new Uzivatel("admin@dokgen.local", "$2a$hash")));
+        given(prihlaseniOmezovac.jeZamceno("admin@dokgen.local")).willReturn(false);
 
-        UserDetails detail = service.loadUserByUsername("admin");
+        UserDetails detail = service.loadUserByUsername("admin@dokgen.local");
 
-        assertThat(detail.getUsername()).isEqualTo("admin");
+        assertThat(detail.getUsername()).isEqualTo("admin@dokgen.local");
         assertThat(detail.getPassword()).isEqualTo("$2a$hash");
         assertThat(detail.isAccountNonLocked()).isTrue();
     }
 
     @Test
     void ucetZamcenyKvuliOpakovanymNeuspechumSePromitneDoUserDetails() {
-        given(uzivatelRepository.findByJmeno("admin")).willReturn(Optional.of(new Uzivatel("admin", "$2a$hash")));
-        given(prihlaseniOmezovac.jeZamceno("admin")).willReturn(true);
+        given(uzivatelRepository.findByEmail("admin@dokgen.local")).willReturn(Optional.of(new Uzivatel("admin@dokgen.local", "$2a$hash")));
+        given(prihlaseniOmezovac.jeZamceno("admin@dokgen.local")).willReturn(true);
 
-        UserDetails detail = service.loadUserByUsername("admin");
+        UserDetails detail = service.loadUserByUsername("admin@dokgen.local");
 
         assertThat(detail.isAccountNonLocked()).isFalse();
     }
 
     @Test
     void roleUctuSePromitneDoAutorityRoleAdmin() {
-        given(uzivatelRepository.findByJmeno("admin")).willReturn(Optional.of(new Uzivatel("admin", "$2a$hash", Role.ADMIN)));
-        given(prihlaseniOmezovac.jeZamceno("admin")).willReturn(false);
+        given(uzivatelRepository.findByEmail("admin@dokgen.local")).willReturn(Optional.of(new Uzivatel("admin@dokgen.local", "$2a$hash", Role.ADMIN)));
+        given(prihlaseniOmezovac.jeZamceno("admin@dokgen.local")).willReturn(false);
 
-        UserDetails detail = service.loadUserByUsername("admin");
+        UserDetails detail = service.loadUserByUsername("admin@dokgen.local");
 
         assertThat(detail.getAuthorities()).extracting(Object::toString).containsExactly("ROLE_ADMIN");
     }
 
     @Test
     void roleUctuSePromitneDoAutorityRoleAsistentka() {
-        given(uzivatelRepository.findByJmeno("asistentka")).willReturn(Optional.of(new Uzivatel("asistentka", "$2a$hash", Role.ASISTENTKA)));
-        given(prihlaseniOmezovac.jeZamceno("asistentka")).willReturn(false);
+        given(uzivatelRepository.findByEmail("asistentka@dokgen.local")).willReturn(Optional.of(new Uzivatel("asistentka@dokgen.local", "$2a$hash", Role.ASISTENTKA)));
+        given(prihlaseniOmezovac.jeZamceno("asistentka@dokgen.local")).willReturn(false);
 
-        UserDetails detail = service.loadUserByUsername("asistentka");
+        UserDetails detail = service.loadUserByUsername("asistentka@dokgen.local");
 
         assertThat(detail.getAuthorities()).extracting(Object::toString).containsExactly("ROLE_ASISTENTKA");
     }
 
     @Test
     void neexistujiciUzivatelVyhodiChybu() {
-        given(uzivatelRepository.findByJmeno("neznamy")).willReturn(Optional.empty());
+        given(uzivatelRepository.findByEmail("neznamy@dokgen.local")).willReturn(Optional.empty());
 
-        assertThatThrownBy(() -> service.loadUserByUsername("neznamy"))
+        assertThatThrownBy(() -> service.loadUserByUsername("neznamy@dokgen.local"))
                 .isInstanceOf(UsernameNotFoundException.class);
     }
 }

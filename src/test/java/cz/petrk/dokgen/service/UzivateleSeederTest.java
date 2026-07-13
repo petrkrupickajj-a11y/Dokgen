@@ -32,13 +32,13 @@ class UzivateleSeederTest {
         seeder = new UzivateleSeeder(properties, uzivatelRepository, passwordEncoder);
     }
 
-    private void pridejUcet(String jmeno, String heslo) {
-        pridejUcet(jmeno, heslo, null);
+    private void pridejUcet(String email, String heslo) {
+        pridejUcet(email, heslo, null);
     }
 
-    private void pridejUcet(String jmeno, String heslo, String role) {
+    private void pridejUcet(String email, String heslo, String role) {
         UzivateleProperties.Ucet ucet = new UzivateleProperties.Ucet();
-        ucet.setJmeno(jmeno);
+        ucet.setEmail(email);
         ucet.setHeslo(heslo);
         ucet.setRole(role);
         properties.getUzivatele().add(ucet);
@@ -46,8 +46,8 @@ class UzivateleSeederTest {
 
     @Test
     void jizExistujiciUcetSeNeprepisuje() {
-        pridejUcet("admin", "zadaneHeslo123");
-        given(uzivatelRepository.existsByJmeno("admin")).willReturn(true);
+        pridejUcet("admin@dokgen.local", "zadaneHeslo123");
+        given(uzivatelRepository.existsByEmail("admin@dokgen.local")).willReturn(true);
 
         seeder.run(new DefaultApplicationArguments());
 
@@ -56,8 +56,8 @@ class UzivateleSeederTest {
 
     @Test
     void novyUcetSNastavenymHeslemPouzijeToto() {
-        pridejUcet("admin", "zadaneHeslo123");
-        given(uzivatelRepository.existsByJmeno("admin")).willReturn(false);
+        pridejUcet("admin@dokgen.local", "zadaneHeslo123");
+        given(uzivatelRepository.existsByEmail("admin@dokgen.local")).willReturn(false);
 
         seeder.run(new DefaultApplicationArguments());
 
@@ -68,8 +68,8 @@ class UzivateleSeederTest {
 
     @Test
     void novyUcetBezNastavenehoHeslaDostaneNahodneVygenerovaneHeslo() {
-        pridejUcet("admin", "");
-        given(uzivatelRepository.existsByJmeno("admin")).willReturn(false);
+        pridejUcet("admin@dokgen.local", "");
+        given(uzivatelRepository.existsByEmail("admin@dokgen.local")).willReturn(false);
 
         seeder.run(new DefaultApplicationArguments());
 
@@ -80,9 +80,9 @@ class UzivateleSeederTest {
 
     @Test
     void dvaUctyBezHeslaDostanouKazdyJineNahodneHeslo() {
-        pridejUcet("admin", null);
-        pridejUcet("asistentka", null);
-        given(uzivatelRepository.existsByJmeno(any())).willReturn(false);
+        pridejUcet("admin@dokgen.local", null);
+        pridejUcet("asistentka@dokgen.local", null);
+        given(uzivatelRepository.existsByEmail(any())).willReturn(false);
 
         seeder.run(new DefaultApplicationArguments());
 
@@ -94,8 +94,8 @@ class UzivateleSeederTest {
 
     @Test
     void ucetSNastavenouRoliJiPouzije() {
-        pridejUcet("asistentka", "zadaneHeslo123", "ASISTENTKA");
-        given(uzivatelRepository.existsByJmeno("asistentka")).willReturn(false);
+        pridejUcet("asistentka@dokgen.local", "zadaneHeslo123", "ASISTENTKA");
+        given(uzivatelRepository.existsByEmail("asistentka@dokgen.local")).willReturn(false);
 
         seeder.run(new DefaultApplicationArguments());
 
@@ -108,7 +108,7 @@ class UzivateleSeederTest {
     void existujiciUcetBezRoleVDatabaziDostaneDodatecneAdmina() {
         // Simuluje ucet vytvoreny pred zavedenim roli - Hibernate ddl-auto=update
         // pro nej pridal sloupec "role" jako null.
-        Uzivatel legacyUcet = new Uzivatel("stary-ucet", "hash");
+        Uzivatel legacyUcet = new Uzivatel("stary-ucet@dokgen.local", "hash");
         legacyUcet.setRole(null);
         given(uzivatelRepository.findAll()).willReturn(java.util.List.of(legacyUcet));
 
@@ -120,7 +120,7 @@ class UzivateleSeederTest {
 
     @Test
     void existujiciUcetSJizNastavenouRoliSeNeprepisuje() {
-        Uzivatel ucetSRoli = new Uzivatel("existujici", "hash", Role.ASISTENTKA);
+        Uzivatel ucetSRoli = new Uzivatel("existujici@dokgen.local", "hash", Role.ASISTENTKA);
         given(uzivatelRepository.findAll()).willReturn(java.util.List.of(ucetSRoli));
 
         seeder.run(new DefaultApplicationArguments());
@@ -130,8 +130,8 @@ class UzivateleSeederTest {
 
     @Test
     void ucetBezNastaveneRoleDostaneAdmina() {
-        pridejUcet("admin", "zadaneHeslo123");
-        given(uzivatelRepository.existsByJmeno("admin")).willReturn(false);
+        pridejUcet("admin@dokgen.local", "zadaneHeslo123");
+        given(uzivatelRepository.existsByEmail("admin@dokgen.local")).willReturn(false);
 
         seeder.run(new DefaultApplicationArguments());
 

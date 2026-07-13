@@ -31,13 +31,13 @@ public class DokgenUserDetailsService implements UserDetailsService {
     }
 
     @Override
-    public UserDetails loadUserByUsername(String jmeno) throws UsernameNotFoundException {
-        Uzivatel uzivatel = uzivatelRepository.findByJmeno(jmeno)
-                .orElseThrow(() -> new UsernameNotFoundException("Uživatel \"" + jmeno + "\" neexistuje"));
-        return User.withUsername(uzivatel.getJmeno())
+    public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
+        Uzivatel uzivatel = uzivatelRepository.findByEmail(email)
+                .orElseThrow(() -> new UsernameNotFoundException("Uživatel \"" + email + "\" neexistuje"));
+        return User.withUsername(uzivatel.getEmail())
                 .password(uzivatel.getHeslo())
                 .roles(uzivatel.getRole().name())
-                .accountLocked(prihlaseniOmezovac.jeZamceno(jmeno))
+                .accountLocked(prihlaseniOmezovac.jeZamceno(email))
                 .build();
     }
 }

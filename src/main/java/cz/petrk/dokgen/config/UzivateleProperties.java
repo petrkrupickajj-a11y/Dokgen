@@ -7,7 +7,7 @@ import java.util.List;
 
 /**
  * Seznam prihlasovacich uctu appky (viz application.properties,
- * dokgen.uzivatele[N].jmeno / [N].heslo / [N].role). Role urcuje opravneni
+ * dokgen.uzivatele[N].email / [N].heslo / [N].role). Role urcuje opravneni
  * (ADMIN/ASISTENTKA, viz entita Role a SecurityConfig) - kdyz neni u uctu
  * nastavena, UzivateleSeeder mu prideli ADMIN (zpetne kompatibilni chovani
  * pro pripad, ze nekdo appku upgraduje ze starsi verze bez rolí).
@@ -26,16 +26,16 @@ public class UzivateleProperties {
     }
 
     public static class Ucet {
-        private String jmeno;
+        private String email;
         private String heslo;
         private String role;
 
-        public String getJmeno() {
-            return jmeno;
+        public String getEmail() {
+            return email;
         }
 
-        public void setJmeno(String jmeno) {
-            this.jmeno = jmeno;
+        public void setEmail(String email) {
+            this.email = email;
         }
 
         public String getHeslo() {
