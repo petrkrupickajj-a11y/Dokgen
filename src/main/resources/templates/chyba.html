@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <title th:text="#{chyba.title}">Nastala chyba</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/styles.css}">
+</head>
+<body class="w-640">
+    <div class="jazyky plovouci">
+        <a href="#" data-lang="cs" th:classappend="${#locale.language == 'cs'} ? ' aktivni-jazyk'">CS</a>
+        <a href="#" data-lang="en" th:classappend="${#locale.language == 'en'} ? ' aktivni-jazyk'">EN</a>
+        <a href="#" data-lang="de" th:classappend="${#locale.language == 'de'} ? ' aktivni-jazyk'">DE</a>
+    </div>
+
+    <h1 th:text="#{chyba.h1}">Něco se nepovedlo</h1>
+
+    <div class="panel">
+        <p class="zprava" th:text="${zprava}">Nastala chyba.</p>
+        <a class="button" href="/" style="margin-top: 16px; display: inline-block;" th:text="#{spolecne.zpet_klienti}">Zpět na seznam klientů</a>
+    </div>
+    <script th:src="@{/jazyky.js}"></script>
+</body>
+</html>
