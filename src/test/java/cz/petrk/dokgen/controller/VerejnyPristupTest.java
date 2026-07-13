@@ -3,6 +3,7 @@ package cz.petrk.dokgen.controller;
 import cz.petrk.dokgen.config.SecurityConfig;
 import cz.petrk.dokgen.repository.SablonaRepository;
 import cz.petrk.dokgen.service.DocumentGeneratorService;
+import cz.petrk.dokgen.service.IpOmezovac;
 import cz.petrk.dokgen.service.MojeEmailService;
 import cz.petrk.dokgen.service.MojeHesloService;
 import cz.petrk.dokgen.service.RegistraceService;
@@ -59,6 +60,9 @@ class VerejnyPristupTest {
 
     @MockBean
     private ResetHeslaService resetHeslaService;
+
+    @MockBean
+    private IpOmezovac ipOmezovac;
 
     // Kazdy prihlaseny ucet ma stejna opravneni - /sablony vyzaduje jen prihlaseni, ne konkretni roli.
     @Test

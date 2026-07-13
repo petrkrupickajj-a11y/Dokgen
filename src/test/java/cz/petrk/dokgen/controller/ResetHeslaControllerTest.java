@@ -1,6 +1,8 @@
 package cz.petrk.dokgen.controller;
 
+import cz.petrk.dokgen.service.IpOmezovac;
 import cz.petrk.dokgen.service.ResetHeslaService;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -12,6 +14,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.willThrow;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -31,6 +34,14 @@ class ResetHeslaControllerTest {
 
     @MockBean
     private ResetHeslaService resetHeslaService;
+
+    @MockBean
+    private IpOmezovac ipOmezovac;
+
+    @BeforeEach
+    void povolIpOmezovacVDefaultu() {
+        given(ipOmezovac.povolPozadavek(any())).willReturn(true);
+    }
 
     @Test
     void formularZobraziZadostOResetStranku() throws Exception {
@@ -61,6 +72,19 @@ class ResetHeslaControllerTest {
                 .andExpect(status().is3xxRedirection());
 
         verify(resetHeslaService).pozadejReset("kdokoliv@example.com", "http://localhost:8080");
+    }
+
+    @Test
+    void odeslatPriPrekroceniLimituIpAdresyVratiChybuANevolaService() throws Exception {
+        given(ipOmezovac.povolPozadavek(any())).willReturn(false);
+
+        mockMvc.perform(post("/zapomenute-heslo").with(csrf())
+                        .param("email", "kdokoliv@example.com"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/zapomenute-heslo"))
+                .andExpect(flash().attribute("chyba", "Příliš mnoho požadavků z tvé adresy, zkus to prosím později."));
+
+        verify(resetHeslaService, never()).pozadejReset(any(), any());
     }
 
     @Test

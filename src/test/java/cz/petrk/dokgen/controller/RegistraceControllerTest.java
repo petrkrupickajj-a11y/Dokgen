@@ -1,6 +1,8 @@
 package cz.petrk.dokgen.controller;
 
+import cz.petrk.dokgen.service.IpOmezovac;
 import cz.petrk.dokgen.service.RegistraceService;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -8,7 +10,10 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.willThrow;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -27,6 +32,14 @@ class RegistraceControllerTest {
 
     @MockBean
     private RegistraceService registraceService;
+
+    @MockBean
+    private IpOmezovac ipOmezovac;
+
+    @BeforeEach
+    void povolIpOmezovacVDefaultu() {
+        given(ipOmezovac.povolPozadavek(any())).willReturn(true);
+    }
 
     @Test
     void formularZobraziRegistracniStranku() throws Exception {
@@ -74,5 +87,20 @@ class RegistraceControllerTest {
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/registrace"))
                 .andExpect(flash().attribute("chyba", "Účet s emailem \"admin@dokgen.local\" už existuje."));
+    }
+
+    @Test
+    void zaregistrovatPriPrekroceniLimituIpAdresyVratiChybuANevolaService() throws Exception {
+        given(ipOmezovac.povolPozadavek(any())).willReturn(false);
+
+        mockMvc.perform(post("/registrace").with(csrf())
+                        .param("email", "novak@example.com")
+                        .param("heslo", "tajneheslo123")
+                        .param("hesloZnovu", "tajneheslo123"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/registrace"))
+                .andExpect(flash().attribute("chyba", "Příliš mnoho požadavků z tvé adresy, zkus to prosím později."));
+
+        verify(registraceService, never()).zaregistruj(any(), any(), any());
     }
 }

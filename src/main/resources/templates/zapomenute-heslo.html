@@ -18,9 +18,10 @@
     <h1 th:text="#{zapomenute-heslo.h1}">Zapomenuté heslo</h1>
 
     <div class="panel">
+        <div class="chybovy-box" role="alert" th:if="${chyba}" th:text="${chyba}"></div>
         <div class="info-box" role="status" th:if="${odeslano}" th:text="#{zapomenute-heslo.odeslano}">Pokud tenhle email existuje, poslali jsme na něj odkaz pro nastavení nového hesla.</div>
 
-        <p th:unless="${odeslano}" th:text="#{zapomenute-heslo.podnadpis}">Zadej email, na který ti pošleme odkaz pro nastavení nového hesla.</p>
+        <p th:unless="${odeslano} or ${chyba}" th:text="#{zapomenute-heslo.podnadpis}">Zadej email, na který ti pošleme odkaz pro nastavení nového hesla.</p>
 
         <form method="post" th:action="@{/zapomenute-heslo}">
             <label for="email" th:text="#{pole.email}">Email</label>

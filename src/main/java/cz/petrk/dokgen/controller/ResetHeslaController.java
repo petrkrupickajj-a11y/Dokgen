@@ -1,7 +1,11 @@
 package cz.petrk.dokgen.controller;
 
+import cz.petrk.dokgen.service.IpOmezovac;
 import cz.petrk.dokgen.service.ResetHeslaService;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.MessageSource;
+import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -13,11 +17,17 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 public class ResetHeslaController {
 
     private final ResetHeslaService resetHeslaService;
+    private final IpOmezovac ipOmezovac;
+    private final MessageSource zpravy;
     private final String zakladUrl;
 
     public ResetHeslaController(ResetHeslaService resetHeslaService,
+                                 IpOmezovac ipOmezovac,
+                                 MessageSource zpravy,
                                  @Value("${dokgen.zaklad-url}") String zakladUrl) {
         this.resetHeslaService = resetHeslaService;
+        this.ipOmezovac = ipOmezovac;
+        this.zpravy = zpravy;
         this.zakladUrl = zakladUrl;
     }
 
@@ -31,7 +41,12 @@ public class ResetHeslaController {
     // pozadat o reset ciziho emailu s podvrzenou Host hlavickou a obeti by
     // prisel jinak platny odkaz vedouci na utocnikovu domenu (viz ResetHeslaService).
     @PostMapping("/zapomenute-heslo")
-    public String odeslat(@RequestParam String email, RedirectAttributes redirectAttributes) {
+    public String odeslat(@RequestParam String email, HttpServletRequest request, RedirectAttributes redirectAttributes) {
+        if (!ipOmezovac.povolPozadavek(request.getRemoteAddr())) {
+            redirectAttributes.addFlashAttribute("chyba",
+                    zpravy.getMessage("chyba.prilis_mnoho_pozadavku", null, LocaleContextHolder.getLocale()));
+            return "redirect:/zapomenute-heslo";
+        }
         resetHeslaService.pozadejReset(email, zakladUrl);
         redirectAttributes.addFlashAttribute("odeslano", true);
         return "redirect:/zapomenute-heslo";
