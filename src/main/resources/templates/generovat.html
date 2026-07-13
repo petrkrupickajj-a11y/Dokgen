@@ -14,8 +14,7 @@
         <a href="/" class="aktivni" th:text="#{nav.klienti}">Klienti</a>
         <a href="/sablony" th:if="${jeAdmin}" th:text="#{nav.sablony}">Šablony</a>
         <a href="/historie" th:text="#{nav.historie}">Historie</a>
-        <a href="/registrace" th:if="${jeAdmin}" th:text="#{nav.registrace}">Nový účet</a>
-        <a href="/moje-heslo" th:text="#{nav.moje_heslo}">Změnit heslo</a>
+        <a href="/nastaveni" th:text="#{nav.nastaveni}">Nastavení</a>
         <form th:action="@{/logout}" method="post" style="display:inline" class="form-odhlasit" th:attr="data-potvrzeni=#{nav.odhlasit.confirm}">
             <button type="submit" class="nav-odhlasit" th:text="#{nav.odhlasit}">Odhlásit se</button>
         </form>

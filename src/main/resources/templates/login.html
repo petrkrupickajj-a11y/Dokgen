@@ -20,6 +20,7 @@
     <div class="panel">
         <div class="chybovy-box" id="login-chyba" role="alert" th:if="${param.error}" th:text="#{login.chyba}">Neplatné uživatelské jméno nebo heslo.</div>
         <div class="info-box" role="status" th:if="${param.odhlaseno}" th:text="#{login.odhlaseno}">Byl jsi úspěšně odhlášen.</div>
+        <div class="info-box" role="status" th:if="${param.jmenoZmeneno}" th:text="#{login.jmeno_zmeneno}">Uživatelské jméno bylo změněno. Přihlas se prosím znovu.</div>
 
         <form method="post" th:action="@{/login}">
             <label for="username" th:text="#{pole.uzivatelske_jmeno}">Uživatelské jméno</label>

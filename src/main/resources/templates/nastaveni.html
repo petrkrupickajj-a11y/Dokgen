@@ -2,7 +2,7 @@
 <html xmlns:th="http://www.thymeleaf.org" lang="cs">
 <head>
     <meta charset="UTF-8">
-    <title th:text="#{moje-heslo.title}">Změnit heslo</title>
+    <title th:text="#{nastaveni.title}">Nastavení</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -14,7 +14,7 @@
         <a href="/" th:text="#{nav.klienti}">Klienti</a>
         <a href="/sablony" th:if="${jeAdmin}" th:text="#{nav.sablony}">Šablony</a>
         <a href="/historie" th:text="#{nav.historie}">Historie</a>
-        <a href="/nastaveni" th:text="#{nav.nastaveni}">Nastavení</a>
+        <a href="/nastaveni" class="aktivni" th:text="#{nav.nastaveni}">Nastavení</a>
         <form th:action="@{/logout}" method="post" style="display:inline" class="form-odhlasit" th:attr="data-potvrzeni=#{nav.odhlasit.confirm}">
             <button type="submit" class="nav-odhlasit" th:text="#{nav.odhlasit}">Odhlásit se</button>
         </form>
@@ -25,32 +25,40 @@
         </div>
     </nav>
 
-    <h1 id="hlavni-obsah" th:text="#{moje-heslo.h1}">Změnit heslo</h1>
+    <h1 id="hlavni-obsah" th:text="#{nastaveni.h1}">Nastavení</h1>
+    <p class="podnadpis" th:text="#{nastaveni.aktualni_jmeno(${aktualniJmeno})}">Aktuální uživatelské jméno: admin</p>
 
     <div class="panel">
-        <div class="chybovy-box" id="moje-heslo-chyba" role="alert" th:if="${chyba}" th:text="${chyba}"></div>
-        <div class="info-box" role="status" th:if="${uspech}" th:text="#{moje-heslo.uspech}"></div>
+        <h2 th:text="#{nastaveni.jmeno.nadpis}">Uživatelské jméno</h2>
+        <div class="chybovy-box" id="nastaveni-chyba" role="alert" th:if="${chyba}" th:text="${chyba}"></div>
 
-        <form method="post" th:action="@{/moje-heslo}">
+        <form method="post" th:action="@{/nastaveni/jmeno}">
             <label for="soucasneHeslo" th:text="#{pole.soucasne_heslo}">Současné heslo</label>
             <input type="password" id="soucasneHeslo" name="soucasneHeslo" autocomplete="current-password" required
                    th:aria-invalid="${chyba != null}"
-                   th:aria-describedby="${chyba} ? 'moje-heslo-chyba' : null" />
+                   th:aria-describedby="${chyba} ? 'nastaveni-chyba' : null" />
 
-            <label for="noveHeslo" th:text="#{pole.nove_heslo}">Nové heslo</label>
-            <input type="password" id="noveHeslo" name="noveHeslo" autocomplete="new-password" required minlength="6"
+            <label for="noveJmeno" th:text="#{pole.nove_uzivatelske_jmeno}">Nové uživatelské jméno</label>
+            <input type="text" id="noveJmeno" name="noveJmeno" autocomplete="username" required
+                   th:value="${aktualniJmeno}"
                    th:aria-invalid="${chyba != null}"
-                   th:aria-describedby="${chyba} ? 'moje-heslo-chyba' : null" />
-
-            <label for="noveHesloZnovu" th:text="#{moje-heslo.nove_heslo_znovu}">Nové heslo znovu</label>
-            <input type="password" id="noveHesloZnovu" name="noveHesloZnovu" autocomplete="new-password" required minlength="6"
-                   th:aria-invalid="${chyba != null}"
-                   th:aria-describedby="${chyba} ? 'moje-heslo-chyba' : null" />
+                   th:aria-describedby="${chyba} ? 'nastaveni-chyba' : null" />
+            <p th:text="#{nastaveni.jmeno.napoveda}">Po změně jména se budeš muset znovu přihlásit.</p>
 
             <div class="akce">
-                <button type="submit" th:text="#{moje-heslo.zmenit}">Změnit heslo</button>
+                <button type="submit" th:text="#{nastaveni.jmeno.zmenit}">Změnit jméno</button>
             </div>
         </form>
+    </div>
+
+    <div class="panel">
+        <h2 th:text="#{nastaveni.heslo.nadpis}">Heslo</h2>
+        <a class="button" href="/moje-heslo" th:text="#{nastaveni.heslo.odkaz}">Změnit heslo</a>
+    </div>
+
+    <div class="panel" th:if="${jeAdmin}">
+        <h2 th:text="#{nastaveni.ucet.nadpis}">Účty</h2>
+        <a class="button" href="/registrace" th:text="#{nastaveni.ucet.odkaz}">Založit nový účet</a>
     </div>
 
     <script th:src="@{/jazyky.js}"></script>

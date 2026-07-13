@@ -58,6 +58,11 @@ public class Uzivatel {
         return jmeno;
     }
 
+    /** Pro samoobslusnou zmenu uzivatelskeho jmena (viz MojeJmenoService). */
+    public void setJmeno(String jmeno) {
+        this.jmeno = jmeno;
+    }
+
     public String getHeslo() {
         return heslo;
     }

@@ -4,6 +4,7 @@ import cz.petrk.dokgen.config.SecurityConfig;
 import cz.petrk.dokgen.repository.SablonaRepository;
 import cz.petrk.dokgen.service.DocumentGeneratorService;
 import cz.petrk.dokgen.service.MojeHesloService;
+import cz.petrk.dokgen.service.MojeJmenoService;
 import cz.petrk.dokgen.service.RegistraceService;
 import cz.petrk.dokgen.service.SablonaUlozisteService;
 import org.junit.jupiter.api.Test;
@@ -30,7 +31,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * explicitne naimportovana, aby se autorizacni pravidla (hasRole("ADMIN")
  * na /sablony a /registrace) opravdu vyhodnotila.
  */
-@WebMvcTest(controllers = {SablonaController.class, RegistraceController.class, PrihlaseniController.class, MojeHesloController.class})
+@WebMvcTest(controllers = {SablonaController.class, RegistraceController.class, PrihlaseniController.class, MojeHesloController.class, NastaveniController.class})
 @Import(SecurityConfig.class)
 class RoliAOpravneniTest {
 
@@ -51,6 +52,9 @@ class RoliAOpravneniTest {
 
     @MockBean
     private MojeHesloService mojeHesloService;
+
+    @MockBean
+    private MojeJmenoService mojeJmenoService;
 
     @Test
     @WithMockUser(roles = "ADMIN")
@@ -98,5 +102,14 @@ class RoliAOpravneniTest {
         mockMvc.perform(get("/moje-heslo"))
                 .andExpect(status().isOk())
                 .andExpect(view().name("moje-heslo"));
+    }
+
+    // Stejny princip jako /moje-heslo - stranka Nastaveni neni omezena na ADMIN.
+    @Test
+    @WithMockUser(username = "asistentka", roles = "ASISTENTKA")
+    void asistentkaMaPristupNaNastaveni() throws Exception {
+        mockMvc.perform(get("/nastaveni"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("nastaveni"));
     }
 }
