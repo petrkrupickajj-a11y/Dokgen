@@ -11,6 +11,10 @@ import org.springframework.stereotype.Service;
 public class MojeHesloService {
 
     private static final int MIN_DELKA_HESLA = 8;
+    // BCrypt (viz PasswordEncoder) pracuje jen s prvnimi 72 bajty hesla a novejsi
+    // Spring Security u delsich hesel rovnou vyhodi vyjimku - delsi heslo proto
+    // odmitneme uz tady se srozumitelnou hlaskou.
+    private static final int MAX_DELKA_HESLA = 72;
 
     private final UzivatelRepository uzivatelRepository;
     private final PasswordEncoder passwordEncoder;
@@ -37,6 +41,9 @@ public class MojeHesloService {
         }
         if (noveHeslo == null || noveHeslo.length() < MIN_DELKA_HESLA) {
             throw new IllegalArgumentException(zprava("chyba.moje_heslo.heslo_kratke", MIN_DELKA_HESLA));
+        }
+        if (noveHeslo.length() > MAX_DELKA_HESLA) {
+            throw new IllegalArgumentException(zprava("chyba.moje_heslo.heslo_dlouhe", MAX_DELKA_HESLA));
         }
         if (!noveHeslo.equals(noveHesloZnovu)) {
             throw new IllegalArgumentException(zprava("chyba.moje_heslo.hesla_neshoda"));

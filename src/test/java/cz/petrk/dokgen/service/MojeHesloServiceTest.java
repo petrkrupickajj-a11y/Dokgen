@@ -86,6 +86,19 @@ class MojeHesloServiceTest {
     }
 
     @Test
+    void zmenHesloSPrilisDlouhymNovymHeslemVyhodiChybu() {
+        given(uzivatelRepository.findByEmail("admin@dokgen.local")).willReturn(Optional.of(uzivatel()));
+        given(passwordEncoder.matches("stareheslo", "$2a$stareHash")).willReturn(true);
+        String prilisDlouhe = "a".repeat(73);
+
+        assertThatThrownBy(() -> service.zmenHeslo("admin@dokgen.local", "stareheslo", prilisDlouhe, prilisDlouhe))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("72");
+
+        verify(uzivatelRepository, never()).save(any());
+    }
+
+    @Test
     void zmenHesloSNeshodujicimiSeNovymiHeslyVyhodiChybu() {
         given(uzivatelRepository.findByEmail("admin@dokgen.local")).willReturn(Optional.of(uzivatel()));
         given(passwordEncoder.matches("stareheslo", "$2a$stareHash")).willReturn(true);

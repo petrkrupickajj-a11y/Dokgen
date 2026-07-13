@@ -39,12 +39,12 @@
                    th:aria-describedby="${chyba} ? 'moje-heslo-chyba' : null" />
 
             <label for="noveHeslo" th:text="#{pole.nove_heslo}">Nové heslo</label>
-            <input type="password" id="noveHeslo" name="noveHeslo" autocomplete="new-password" required minlength="8"
+            <input type="password" id="noveHeslo" name="noveHeslo" autocomplete="new-password" required minlength="8" maxlength="72"
                    th:aria-invalid="${chyba != null}"
                    th:aria-describedby="${chyba} ? 'moje-heslo-chyba' : null" />
 
             <label for="noveHesloZnovu" th:text="#{moje-heslo.nove_heslo_znovu}">Nové heslo znovu</label>
-            <input type="password" id="noveHesloZnovu" name="noveHesloZnovu" autocomplete="new-password" required minlength="8"
+            <input type="password" id="noveHesloZnovu" name="noveHesloZnovu" autocomplete="new-password" required minlength="8" maxlength="72"
                    th:aria-invalid="${chyba != null}"
                    th:aria-describedby="${chyba} ? 'moje-heslo-chyba' : null" />
 

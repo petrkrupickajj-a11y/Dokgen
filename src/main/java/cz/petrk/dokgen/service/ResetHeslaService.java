@@ -33,6 +33,10 @@ public class ResetHeslaService {
 
     private static final Logger LOG = LoggerFactory.getLogger(ResetHeslaService.class);
     private static final int MIN_DELKA_HESLA = 8;
+    // BCrypt (viz PasswordEncoder) pracuje jen s prvnimi 72 bajty hesla a novejsi
+    // Spring Security u delsich hesel rovnou vyhodi vyjimku - delsi heslo proto
+    // odmitneme uz tady se srozumitelnou hlaskou.
+    private static final int MAX_DELKA_HESLA = 72;
     private static final Duration PLATNOST = Duration.ofMinutes(45);
 
     private final UzivatelRepository uzivatelRepository;
@@ -108,6 +112,9 @@ public class ResetHeslaService {
 
         if (noveHeslo == null || noveHeslo.length() < MIN_DELKA_HESLA) {
             throw new IllegalArgumentException(zprava("chyba.reset_hesla.heslo_kratke", MIN_DELKA_HESLA));
+        }
+        if (noveHeslo.length() > MAX_DELKA_HESLA) {
+            throw new IllegalArgumentException(zprava("chyba.reset_hesla.heslo_dlouhe", MAX_DELKA_HESLA));
         }
         if (!noveHeslo.equals(noveHesloZnovu)) {
             throw new IllegalArgumentException(zprava("chyba.reset_hesla.hesla_neshoda"));

@@ -27,12 +27,12 @@
                    th:aria-describedby="${chyba} ? 'registrace-chyba' : null" />
 
             <label for="heslo" th:text="#{pole.heslo}">Heslo</label>
-            <input type="password" id="heslo" name="heslo" autocomplete="new-password" required minlength="8"
+            <input type="password" id="heslo" name="heslo" autocomplete="new-password" required minlength="8" maxlength="72"
                    th:aria-invalid="${chyba != null}"
                    th:aria-describedby="${chyba} ? 'registrace-chyba' : null" />
 
             <label for="hesloZnovu" th:text="#{registrace.heslo_znovu}">Heslo znovu</label>
-            <input type="password" id="hesloZnovu" name="hesloZnovu" autocomplete="new-password" required minlength="8"
+            <input type="password" id="hesloZnovu" name="hesloZnovu" autocomplete="new-password" required minlength="8" maxlength="72"
                    th:aria-invalid="${chyba != null}"
                    th:aria-describedby="${chyba} ? 'registrace-chyba' : null" />
 

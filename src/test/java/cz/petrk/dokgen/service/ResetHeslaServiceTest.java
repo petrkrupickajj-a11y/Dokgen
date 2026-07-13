@@ -194,6 +194,19 @@ class ResetHeslaServiceTest {
     }
 
     @Test
+    void nastavNoveHesloSPrilisDlouhymHeslemVyhodiChybu() {
+        ResetHesla reset = new ResetHesla(uzivatel(), hashProNejakyToken(), LocalDateTime.now(hodiny).plusMinutes(30));
+        given(resetHeslaRepository.findByTokenHash(any())).willReturn(Optional.of(reset));
+        String prilisDlouhe = "a".repeat(73);
+
+        assertThatThrownBy(() -> service.nastavNoveHeslo("cokoliv", prilisDlouhe, prilisDlouhe))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("72");
+
+        verify(uzivatelRepository, never()).save(any());
+    }
+
+    @Test
     void nastavNoveHesloSNeshodujicimiSeHeslyVyhodiChybu() {
         ResetHesla reset = new ResetHesla(uzivatel(), hashProNejakyToken(), LocalDateTime.now(hodiny).plusMinutes(30));
         given(resetHeslaRepository.findByTokenHash(any())).willReturn(Optional.of(reset));

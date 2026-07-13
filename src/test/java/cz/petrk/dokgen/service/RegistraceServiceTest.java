@@ -115,6 +115,17 @@ class RegistraceServiceTest {
     }
 
     @Test
+    void zaregistrujSPrilisDlouhymHeslemVyhodiChybu() {
+        String prilisDlouhe = "a".repeat(73);
+
+        assertThatThrownBy(() -> service.zaregistruj("novak@example.com", prilisDlouhe, prilisDlouhe))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("72");
+
+        verify(uzivatelRepository, never()).save(any());
+    }
+
+    @Test
     void zaregistrujSObsazenymEmailemVyhodiChybu() {
         given(uzivatelRepository.existsByEmail("admin@dokgen.local")).willReturn(true);
 
