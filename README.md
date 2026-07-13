@@ -41,15 +41,16 @@ výše), další spuštění už bez konzole:
 
 Výsledek najdeš v `dist\Dokgen\Dokgen.exe` - stačí zkopírovat/přesunout
 kamkoliv (třeba zástupce na plochu), i s celou složkou `dist\Dokgen`
-vedle sebe. Appka si otevře i konzolové okno se svým logem (kvůli heslu
-níže) - to je normální, jen ho nezavírej, dokud appku používáš.
+vedle sebe. Appka nabíhá bez viditelného okna konzole - po chvíli se
+sama otevře rovnou v prohlížeči.
 
 Uživatelské jméno pro první přihlášení je **admin**, heslo appka vezme
 z proměnné prostředí `DOKGEN_HESLO`, nebo (pokud není nastavená) náhodně
-vygeneruje a vypíše do svého konzolového okna - hledej řádek "vygenerovala
-toto NÁHODNÉ jednorázové heslo" (víc v sekci Bezpečnost níže). Chceš-li
-si heslo nastavit sám předem, nastav proměnnou prostředí `DOKGEN_HESLO`
-před spuštěním `Dokgen.exe`.
+vygeneruje - protože appka nemá viditelnou konzoli, hledej ho v souboru
+`data\dokgen.log` (vedle `Dokgen.exe`), řádek "vygenerovala toto NÁHODNÉ
+jednorázové heslo" (víc v sekci Bezpečnost níže). Chceš-li si heslo
+nastavit sám předem, nastav proměnnou prostředí `DOKGEN_HESLO` před
+spuštěním `Dokgen.exe`.
 
 ### Alternativa: spuštění přes konzoli (Windows/Linux/Mac)
 
