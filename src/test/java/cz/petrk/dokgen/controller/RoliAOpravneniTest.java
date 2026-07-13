@@ -3,6 +3,7 @@ package cz.petrk.dokgen.controller;
 import cz.petrk.dokgen.config.SecurityConfig;
 import cz.petrk.dokgen.repository.SablonaRepository;
 import cz.petrk.dokgen.service.DocumentGeneratorService;
+import cz.petrk.dokgen.service.MojeHesloService;
 import cz.petrk.dokgen.service.RegistraceService;
 import cz.petrk.dokgen.service.SablonaUlozisteService;
 import org.junit.jupiter.api.Test;
@@ -29,7 +30,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * explicitne naimportovana, aby se autorizacni pravidla (hasRole("ADMIN")
  * na /sablony a /registrace) opravdu vyhodnotila.
  */
-@WebMvcTest(controllers = {SablonaController.class, RegistraceController.class, PrihlaseniController.class})
+@WebMvcTest(controllers = {SablonaController.class, RegistraceController.class, PrihlaseniController.class, MojeHesloController.class})
 @Import(SecurityConfig.class)
 class RoliAOpravneniTest {
 
@@ -47,6 +48,9 @@ class RoliAOpravneniTest {
 
     @MockBean
     private RegistraceService registraceService;
+
+    @MockBean
+    private MojeHesloService mojeHesloService;
 
     @Test
     @WithMockUser(roles = "ADMIN")
@@ -84,5 +88,15 @@ class RoliAOpravneniTest {
         mockMvc.perform(get("/registrace"))
                 .andExpect(status().isForbidden())
                 .andExpect(forwardedUrl("/pristup-odepren"));
+    }
+
+    // Na rozdil od /sablony a /registrace neni /moje-heslo omezene na ADMIN -
+    // zmenit si vlastni heslo musi jit jakekoli prihlasene roli.
+    @Test
+    @WithMockUser(roles = "ASISTENTKA")
+    void asistentkaMaPristupNaZmenuVlastnihoHesla() throws Exception {
+        mockMvc.perform(get("/moje-heslo"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("moje-heslo"));
     }
 }
