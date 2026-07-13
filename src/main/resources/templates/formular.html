@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <title th:text="#{formular.title}">Údaje klienta</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/styles.css}">
+</head>
+<body class="w-640" th:attr="data-stav-ukladam=#{formular.ukladam}">
+    <div class="jazyky plovouci">
+        <a href="#" data-lang="cs" th:classappend="${#locale.language == 'cs'} ? ' aktivni-jazyk'">CS</a>
+        <a href="#" data-lang="en" th:classappend="${#locale.language == 'en'} ? ' aktivni-jazyk'">EN</a>
+        <a href="#" data-lang="de" th:classappend="${#locale.language == 'de'} ? ' aktivni-jazyk'">DE</a>
+    </div>
+
+    <h1 th:text="${klient.id} != null ? #{formular.h1.upravit} : #{formular.h1.novy}"></h1>
+
+    <div class="panel">
+        <form id="formularKlienta" th:action="@{/ulozit}" th:object="${klient}" method="post">
+            <input type="hidden" th:field="*{id}" />
+
+            <label for="jmeno" th:text="#{pole.jmeno}">Jméno</label>
+            <input type="text" th:field="*{jmeno}" th:classappend="${#fields.hasErrors('jmeno')} ? 'chyba'"
+                   th:attr="aria-invalid=${#fields.hasErrors('jmeno')},aria-describedby=${#fields.hasErrors('jmeno')} ? 'jmeno-chyba' : null"
+                   maxlength="100" autocomplete="given-name" autofocus required />
+            <div class="chybova-zprava" id="jmeno-chyba" th:if="${#fields.hasErrors('jmeno')}" th:errors="*{jmeno}"></div>
+
+            <label for="prijmeni" th:text="#{pole.prijmeni}">Příjmení</label>
+            <input type="text" th:field="*{prijmeni}" th:classappend="${#fields.hasErrors('prijmeni')} ? 'chyba'"
+                   th:attr="aria-invalid=${#fields.hasErrors('prijmeni')},aria-describedby=${#fields.hasErrors('prijmeni')} ? 'prijmeni-chyba' : null"
+                   maxlength="100" autocomplete="family-name" required />
+            <div class="chybova-zprava" id="prijmeni-chyba" th:if="${#fields.hasErrors('prijmeni')}" th:errors="*{prijmeni}"></div>
+
+            <label for="telefon" th:text="#{pole.telefon}">Telefon</label>
+            <input type="tel" th:field="*{telefon}" th:classappend="${#fields.hasErrors('telefon')} ? 'chyba'"
+                   th:attr="aria-invalid=${#fields.hasErrors('telefon')},aria-describedby=${#fields.hasErrors('telefon')} ? 'telefon-chyba' : null"
+                   maxlength="20" autocomplete="tel" />
+            <div class="chybova-zprava" id="telefon-chyba" th:if="${#fields.hasErrors('telefon')}" th:errors="*{telefon}"></div>
+
+            <label for="email" th:text="#{pole.email}">Email</label>
+            <input type="email" th:field="*{email}" th:classappend="${#fields.hasErrors('email')} ? 'chyba'"
+                   th:attr="aria-invalid=${#fields.hasErrors('email')},aria-describedby=${#fields.hasErrors('email')} ? 'email-chyba' : null"
+                   autocomplete="email" />
+            <div class="chybova-zprava" id="email-chyba" th:if="${#fields.hasErrors('email')}" th:errors="*{email}"></div>
+
+            <label for="adresa" th:text="#{formular.adresa}">Adresa (ulice, číslo)</label>
+            <input type="text" th:field="*{adresa}" th:classappend="${#fields.hasErrors('adresa')} ? 'chyba'"
+                   th:attr="aria-invalid=${#fields.hasErrors('adresa')},aria-describedby=${#fields.hasErrors('adresa')} ? 'adresa-chyba' : null"
+                   maxlength="200" autocomplete="street-address" />
+            <div class="chybova-zprava" id="adresa-chyba" th:if="${#fields.hasErrors('adresa')}" th:errors="*{adresa}"></div>
+
+            <label for="mesto" th:text="#{formular.mesto}">Město</label>
+            <input type="text" th:field="*{mesto}" th:classappend="${#fields.hasErrors('mesto')} ? 'chyba'"
+                   th:attr="aria-invalid=${#fields.hasErrors('mesto')},aria-describedby=${#fields.hasErrors('mesto')} ? 'mesto-chyba' : null"
+                   maxlength="100" autocomplete="address-level2" />
+            <div class="chybova-zprava" id="mesto-chyba" th:if="${#fields.hasErrors('mesto')}" th:errors="*{mesto}"></div>
+
+            <label for="psc" th:text="#{formular.psc}">PSČ</label>
+            <input type="text" th:field="*{psc}" th:classappend="${#fields.hasErrors('psc')} ? 'chyba'"
+                   th:attr="aria-invalid=${#fields.hasErrors('psc')},aria-describedby=${#fields.hasErrors('psc')} ? 'psc-chyba' : null"
+                   maxlength="6" autocomplete="postal-code" />
+            <div class="chybova-zprava" id="psc-chyba" th:if="${#fields.hasErrors('psc')}" th:errors="*{psc}"></div>
+
+            <label for="ico" th:text="#{formular.ico}">IČO</label>
+            <input type="text" th:field="*{ico}" th:classappend="${#fields.hasErrors('ico')} ? 'chyba'"
+                   th:attr="aria-invalid=${#fields.hasErrors('ico')},aria-describedby=${#fields.hasErrors('ico')} ? 'ico-chyba' : null"
+                   maxlength="8" autocomplete="off" />
+            <div class="chybova-zprava" id="ico-chyba" th:if="${#fields.hasErrors('ico')}" th:errors="*{ico}"></div>
+
+            <div class="label-radek">
+                <label for="poznamka" th:text="#{formular.poznamka}">Poznámka</label>
+                <span class="napoveda-ikona" tabindex="0" role="img"
+                      th:aria-label="#{spolecne.napoveda_prefix} + ' ' + #{formular.poznamka.napoveda}"
+                      th:attr="data-tip=#{formular.poznamka.napoveda}">💡</span>
+            </div>
+            <input type="text" th:field="*{poznamka}" th:classappend="${#fields.hasErrors('poznamka')} ? 'chyba'"
+                   th:attr="aria-invalid=${#fields.hasErrors('poznamka')},aria-describedby=${#fields.hasErrors('poznamka')} ? 'poznamka-chyba' : null"
+                   maxlength="1000" autocomplete="off" />
+            <div class="chybova-zprava" id="poznamka-chyba" th:if="${#fields.hasErrors('poznamka')}" th:errors="*{poznamka}"></div>
+
+            <div class="akce">
+                <button type="submit" th:text="#{formular.ulozit}">Uložit</button>
+                <a class="zpet" href="/" th:text="#{formular.zrusit}">Zrušit a zpět na seznam</a>
+                <span class="stav-odeslani" aria-live="polite"></span>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        document.getElementById('formularKlienta').addEventListener('submit', function (event) {
+            var tlacitko = event.target.querySelector('button[type=submit]');
+            tlacitko.disabled = true;
+            event.target.querySelector('.stav-odeslani').textContent = document.body.getAttribute('data-stav-ukladam');
+        });
+    </script>
+
+    <button type="button" class="napoveda-tlacitko" aria-expanded="false" aria-controls="napoveda-panel" th:aria-label="#{spolecne.napoveda.label}">?</button>
+    <div id="napoveda-panel" class="napoveda-panel" hidden>
+        <h3 th:text="#{spolecne.napoveda.nadpis}">Jak to tady funguje</h3>
+        <p th:text="#{formular.napoveda.text}">Vyplň údaje klienta. Povinné je jen jméno a příjmení, zbytek podle potřeby. Po uložení se klient objeví v seznamu a dá se z něj hned generovat dokument.</p>
+        <button type="button" class="zavrit" th:text="#{spolecne.zavrit}">Zavřít</button>
+    </div>
+    <script th:src="@{/napoveda.js}"></script>
+    <script th:src="@{/jazyky.js}"></script>
+</body>
+</html>
