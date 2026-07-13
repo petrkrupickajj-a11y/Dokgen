@@ -50,6 +50,24 @@ $env:DOKGEN_HESLO='tajneheslo123'; .\mvnw.cmd spring-boot:run   # Windows PowerS
 
 Appku vypneš v terminálu klávesou `Ctrl+C`.
 
+### Spuštění bez konzole (Windows .exe)
+
+Kdo nechce nic psát do terminálu, může appku sestavit do samostatného
+Windows programu - spustí se dvojklikem jako běžná appka, žádnou Javu na
+cílovém počítači nepotřebuje (je zabalená uvnitř), a po startu si sama
+otevře prohlížeč na hlavní stránku. Sestavení (vyžaduje JDK 17+, stejné
+jako pro běžné spuštění výše):
+
+```powershell
+.\sestavit-exe.bat
+```
+
+Výsledek najdeš v `dist\Dokgen\Dokgen.exe` - stačí zkopírovat/přesunout
+kamkoliv (třeba na zástupce na ploše), i s celou složkou `dist\Dokgen`
+vedle sebe. Heslo pro prvního přihlášení funguje stejně jako výše
+(`DOKGEN_HESLO` v prostředí, jinak náhodně vygenerované do konzolového
+okna, které si program otevře na pozadí).
+
 ## Co to používá
 
 | Vrstva | Technologie |
