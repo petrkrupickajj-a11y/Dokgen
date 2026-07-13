@@ -22,6 +22,7 @@
         <div class="info-box" role="status" th:if="${param.odhlaseno}" th:text="#{login.odhlaseno}">Byl jsi úspěšně odhlášen.</div>
         <div class="info-box" role="status" th:if="${param.emailZmenen}" th:text="#{login.email_zmenen}">Email byl změněn. Přihlas se prosím znovu.</div>
         <div class="info-box" role="status" th:if="${param.registrovano}" th:text="#{login.registrovano}">Účet byl vytvořen, teď se můžeš přihlásit.</div>
+        <div class="info-box" role="status" th:if="${param.hesloResetovano}" th:text="#{login.heslo_resetovano}">Heslo bylo nastaveno, teď se můžeš přihlásit.</div>
 
         <form method="post" th:action="@{/login}">
             <label for="email" th:text="#{pole.email}">Email</label>
@@ -39,6 +40,7 @@
             </div>
         </form>
 
+        <a class="zpet zpet-stred" href="/zapomenute-heslo" th:text="#{login.zapomenute_heslo}">Zapomenuté heslo?</a>
         <a class="zpet zpet-stred" href="/registrace" th:text="#{login.vytvorit_ucet}">Vytvořit účet</a>
     </div>
     <script th:src="@{/jazyky.js}"></script>

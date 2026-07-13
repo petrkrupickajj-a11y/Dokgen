@@ -6,6 +6,7 @@ import cz.petrk.dokgen.service.DocumentGeneratorService;
 import cz.petrk.dokgen.service.MojeEmailService;
 import cz.petrk.dokgen.service.MojeHesloService;
 import cz.petrk.dokgen.service.RegistraceService;
+import cz.petrk.dokgen.service.ResetHeslaService;
 import cz.petrk.dokgen.service.SablonaUlozisteService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,7 +32,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * explicitne naimportovana, aby se autorizacni pravidla (hasRole("ADMIN")
  * na /sablony, permitAll na /registrace) opravdu vyhodnotila.
  */
-@WebMvcTest(controllers = {SablonaController.class, RegistraceController.class, PrihlaseniController.class, MojeHesloController.class, NastaveniController.class})
+@WebMvcTest(controllers = {SablonaController.class, RegistraceController.class, PrihlaseniController.class, MojeHesloController.class, NastaveniController.class, ResetHeslaController.class})
 @Import(SecurityConfig.class)
 class RoliAOpravneniTest {
 
@@ -55,6 +56,9 @@ class RoliAOpravneniTest {
 
     @MockBean
     private MojeEmailService mojeEmailService;
+
+    @MockBean
+    private ResetHeslaService resetHeslaService;
 
     @Test
     @WithMockUser(roles = "ADMIN")
@@ -104,5 +108,20 @@ class RoliAOpravneniTest {
         mockMvc.perform(get("/nastaveni"))
                 .andExpect(status().isOk())
                 .andExpect(view().name("nastaveni"));
+    }
+
+    // Zapomenute heslo musi jit pouzit i bez prihlaseni - k tomu to cele je.
+    @Test
+    void zapomenuteHesloJePristupneINeprihlasenemu() throws Exception {
+        mockMvc.perform(get("/zapomenute-heslo"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("zapomenute-heslo"));
+    }
+
+    @Test
+    void noveHesloJePristupneINeprihlasenemu() throws Exception {
+        mockMvc.perform(get("/nove-heslo").param("token", "cokoliv"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("nove-heslo"));
     }
 }

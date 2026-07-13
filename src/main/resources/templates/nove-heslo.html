@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <title th:text="#{nove-heslo.title}">Nastavit nové heslo</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/styles.css}">
+</head>
+<body class="auth">
+    <div class="jazyky plovouci">
+        <a href="#" data-lang="cs" th:classappend="${#locale.language == 'cs'} ? ' aktivni-jazyk'">CS</a>
+        <a href="#" data-lang="en" th:classappend="${#locale.language == 'en'} ? ' aktivni-jazyk'">EN</a>
+        <a href="#" data-lang="de" th:classappend="${#locale.language == 'de'} ? ' aktivni-jazyk'">DE</a>
+    </div>
+
+    <h1 th:text="#{nove-heslo.h1}">Nastavit nové heslo</h1>
+
+    <div class="panel">
+        <div class="chybovy-box" role="alert" th:if="${!tokenPlatny}" th:text="#{nove-heslo.token_neplatny}">Odkaz už není platný nebo byl použit.</div>
+
+        <div th:if="${tokenPlatny}">
+            <div class="chybovy-box" id="nove-heslo-chyba" role="alert" th:if="${chyba}" th:text="${chyba}"></div>
+
+            <form method="post" th:action="@{/nove-heslo}">
+                <input type="hidden" name="token" th:value="${token}" />
+
+                <label for="noveHeslo" th:text="#{pole.nove_heslo}">Nové heslo</label>
+                <input type="password" id="noveHeslo" name="noveHeslo" autocomplete="new-password" required minlength="8"
+                       th:aria-invalid="${chyba != null}"
+                       th:aria-describedby="${chyba} ? 'nove-heslo-chyba' : null" />
+
+                <label for="noveHesloZnovu" th:text="#{moje-heslo.nove_heslo_znovu}">Nové heslo znovu</label>
+                <input type="password" id="noveHesloZnovu" name="noveHesloZnovu" autocomplete="new-password" required minlength="8"
+                       th:aria-invalid="${chyba != null}"
+                       th:aria-describedby="${chyba} ? 'nove-heslo-chyba' : null" />
+
+                <div class="akce">
+                    <button type="submit" th:text="#{nove-heslo.nastavit}">Nastavit heslo</button>
+                </div>
+            </form>
+        </div>
+
+        <a class="zpet zpet-stred" href="/zapomenute-heslo" th:if="${!tokenPlatny}" th:text="#{nove-heslo.novy_odkaz}">Požádat o nový odkaz</a>
+    </div>
+    <script th:src="@{/jazyky.js}"></script>
+</body>
+</html>

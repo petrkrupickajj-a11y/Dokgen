@@ -52,6 +52,12 @@
             <artifactId>spring-boot-starter-security</artifactId>
         </dependency>
 
+        <!-- Odesilani emailu s odkazem pro reset hesla (viz ResetHeslaService, application.properties spring.mail.*) -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-mail</artifactId>
+        </dependency>
+
         <!-- Vestavena souborova databaze - zadna instalace navic -->
         <dependency>
             <groupId>com.h2database</groupId>

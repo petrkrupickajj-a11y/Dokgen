@@ -73,7 +73,8 @@ public class SecurityConfig {
                         // (parametr ?lang=) na GET /login vedla k neocekavanemu presmerovani
                         // (ExceptionTranslationFilter to bralo jako neautorizovany pozadavek).
                         // Vlastni requestMatchers tady to spolehlive obejde.
-                        .requestMatchers("/styles.css", "/jazyky.js", "/login", "/registrace").permitAll()
+                        .requestMatchers("/styles.css", "/jazyky.js", "/login", "/registrace",
+                                "/zapomenute-heslo", "/nove-heslo").permitAll()
                         // Sprava sablon jde jen ADMINovi (viz Role) - ASISTENTKA smi jen
                         // spravovat klienty a generovat dokumenty.
                         .requestMatchers("/sablony", "/sablony/**").hasRole("ADMIN")
