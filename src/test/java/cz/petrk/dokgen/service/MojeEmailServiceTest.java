@@ -1,6 +1,5 @@
 package cz.petrk.dokgen.service;
 
-import cz.petrk.dokgen.entity.Role;
 import cz.petrk.dokgen.entity.Uzivatel;
 import cz.petrk.dokgen.repository.UzivatelRepository;
 import org.junit.jupiter.api.AfterEach;
@@ -46,7 +45,7 @@ class MojeEmailServiceTest {
     }
 
     private Uzivatel uzivatel() {
-        return new Uzivatel("admin@dokgen.local", "$2a$stareHash", Role.ADMIN);
+        return new Uzivatel("admin@dokgen.local", "$2a$stareHash");
     }
 
     @Test

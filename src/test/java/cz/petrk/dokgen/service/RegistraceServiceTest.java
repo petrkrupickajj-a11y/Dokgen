@@ -1,6 +1,5 @@
 package cz.petrk.dokgen.service;
 
-import cz.petrk.dokgen.entity.Role;
 import cz.petrk.dokgen.entity.Uzivatel;
 import cz.petrk.dokgen.repository.UzivatelRepository;
 import org.junit.jupiter.api.AfterEach;
@@ -58,18 +57,6 @@ class RegistraceServiceTest {
         verify(uzivatelRepository).save(zachyceny.capture());
         assertThat(zachyceny.getValue().getEmail()).isEqualTo("novak@example.com");
         assertThat(zachyceny.getValue().getHeslo()).isEqualTo("$2a$hash");
-    }
-
-    @Test
-    void zaregistrujVzdyUlozRoliAsistentka() {
-        given(uzivatelRepository.existsByEmail("novak@example.com")).willReturn(false);
-        given(passwordEncoder.encode(any())).willReturn("hash");
-
-        service.zaregistruj("novak@example.com", "tajneheslo123", "tajneheslo123");
-
-        ArgumentCaptor<Uzivatel> zachyceny = ArgumentCaptor.forClass(Uzivatel.class);
-        verify(uzivatelRepository).save(zachyceny.capture());
-        assertThat(zachyceny.getValue().getRole()).isEqualTo(Role.ASISTENTKA);
     }
 
     @Test

@@ -1,6 +1,5 @@
 package cz.petrk.dokgen.service;
 
-import cz.petrk.dokgen.entity.Role;
 import cz.petrk.dokgen.entity.Uzivatel;
 import cz.petrk.dokgen.repository.UzivatelRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -48,26 +47,6 @@ class DokgenUserDetailsServiceTest {
         UserDetails detail = service.loadUserByUsername("admin@dokgen.local");
 
         assertThat(detail.isAccountNonLocked()).isFalse();
-    }
-
-    @Test
-    void roleUctuSePromitneDoAutorityRoleAdmin() {
-        given(uzivatelRepository.findByEmail("admin@dokgen.local")).willReturn(Optional.of(new Uzivatel("admin@dokgen.local", "$2a$hash", Role.ADMIN)));
-        given(prihlaseniOmezovac.jeZamceno("admin@dokgen.local")).willReturn(false);
-
-        UserDetails detail = service.loadUserByUsername("admin@dokgen.local");
-
-        assertThat(detail.getAuthorities()).extracting(Object::toString).containsExactly("ROLE_ADMIN");
-    }
-
-    @Test
-    void roleUctuSePromitneDoAutorityRoleAsistentka() {
-        given(uzivatelRepository.findByEmail("asistentka@dokgen.local")).willReturn(Optional.of(new Uzivatel("asistentka@dokgen.local", "$2a$hash", Role.ASISTENTKA)));
-        given(prihlaseniOmezovac.jeZamceno("asistentka@dokgen.local")).willReturn(false);
-
-        UserDetails detail = service.loadUserByUsername("asistentka@dokgen.local");
-
-        assertThat(detail.getAuthorities()).extracting(Object::toString).containsExactly("ROLE_ASISTENTKA");
     }
 
     @Test

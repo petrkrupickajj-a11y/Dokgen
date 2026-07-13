@@ -1,6 +1,5 @@
 package cz.petrk.dokgen.service;
 
-import cz.petrk.dokgen.entity.Role;
 import cz.petrk.dokgen.entity.Uzivatel;
 import cz.petrk.dokgen.repository.UzivatelRepository;
 import cz.petrk.dokgen.util.EmailValidace;
@@ -29,12 +28,7 @@ public class RegistraceService {
         return zpravy.getMessage(kod, args, LocaleContextHolder.getLocale());
     }
 
-    /**
-     * Verejna registrace noveho uctu - vzdy s roli ASISTENTKA. Spravu sablon
-     * a uctu ma jen ADMIN (vestavene ADMIN ucty se seedujou z
-     * application.properties, viz UzivateleSeeder) - verejny formular roli
-     * zamerne nenabizi, aby si nikdo sam neudelil vyssi opravneni.
-     */
+    /** Verejna registrace noveho uctu - kazdy ucet ma stejna opravneni jako kterykoliv jiny. */
     public void zaregistruj(String email, String heslo, String hesloZnovu) {
         if (email == null || email.isBlank()) {
             throw new IllegalArgumentException(zprava("chyba.registrace.email_povinny"));
@@ -53,6 +47,6 @@ public class RegistraceService {
             throw new IllegalArgumentException(zprava("chyba.registrace.email_obsazeny", ocistenyEmail));
         }
 
-        uzivatelRepository.save(new Uzivatel(ocistenyEmail, passwordEncoder.encode(heslo), Role.ASISTENTKA));
+        uzivatelRepository.save(new Uzivatel(ocistenyEmail, passwordEncoder.encode(heslo)));
     }
 }

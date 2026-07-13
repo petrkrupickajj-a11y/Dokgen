@@ -83,7 +83,7 @@ Appku vypneš v terminálu klávesou `Ctrl+C`.
 | Vrstva | Technologie |
 |---|---|
 | Web / formuláře | Spring Boot + Thymeleaf |
-| Přihlašování | Spring Security (formulářový login, role Admin/Asistentka) |
+| Přihlašování | Spring Security (formulářový login, všechny účty rovnocenné) |
 | Databáze | H2 (soubor na disku, není potřeba nic instalovat) |
 | Ukládání dat | Spring Data JPA / Hibernate |
 | Práce s Word soubory | Apache POI |
@@ -97,7 +97,7 @@ Appku vypneš v terminálu klávesou `Ctrl+C`.
 - `/generovat/{id}` — vybrat šablonu a formát (Word/PDF) a stáhnout vyplněný
   dokument, nebo si ho tlačítkem "Náhled" (`/generovat/{id}/nahled`) nejdřív
   otevřít v novém okně jako PDF bez stažení a bez zápisu do historie
-- `/sablony` (jen role `ADMIN`, viz Bezpečnost) — správa šablon (upload,
+- `/sablony` — správa šablon (upload,
   stažení, nahrazení obsahu, smazání - i vestavěné, a to natrvalo; appka si
   smazání vestavěné šablony pamatuje, takže ji restart neobnoví). Každé
   nahrazení obsahu si appka pamatuje jako novou verzi (`/sablony/{id}/verze`)
@@ -118,11 +118,10 @@ Appku vypneš v terminálu klávesou `Ctrl+C`.
   jako u starších záznamů popsaných výše.
 - `/nastaveni` — správa vlastního účtu: změna přihlašovacího emailu (vyžaduje
   potvrzení současným heslem, po změně appka odhlásí a nechá přihlásit se
-  znovu pod novým emailem), odkaz na změnu hesla (`/moje-heslo`) a - jen pro
-  `ADMIN` - odkaz na založení nového účtu (`/registrace`)
+  znovu pod novým emailem), odkaz na změnu hesla (`/moje-heslo`) a odkaz na
+  založení nového účtu (`/registrace`)
 - `/registrace` — veřejná registrace nového účtu (email, heslo 2×/min. 8
-  znaků). Nový účet vždy dostane roli `ASISTENTKA` - formulář roli nenabízí,
-  aby si nikdo nemohl sám udělit vyšší oprávnění
+  znaků). Každý účet má stejná oprávnění jako kterýkoli jiný
 - `/zapomenute-heslo` a `/nove-heslo` — reset zapomenutého hesla přes odkaz
   zaslaný emailem (víc v sekci Bezpečnost níže)
 
@@ -163,18 +162,17 @@ méně zjevných funkcí drobné ikonky s tooltipem.
 5. **`KlientController`** / **`SablonaController`** / **`HistorieController`** —
    webové endpointy, které tohle všechno propojí a pošlou hotový dokument
    uživateli ke stažení
-6. **`SecurityConfig`** / **`DokgenUserDetailsService`** / **`Role`** /
-   **`PrihlaseniOmezovac`** — přihlášení emailem, role (`ADMIN`/`ASISTENTKA`)
-   a ochrana proti opakovanému zkoušení hesel (viz sekce Bezpečnost níže)
+6. **`SecurityConfig`** / **`DokgenUserDetailsService`** /
+   **`PrihlaseniOmezovac`** — přihlášení emailem (každý účet se stejnými
+   oprávněními) a ochrana proti opakovanému zkoušení hesel (viz sekce
+   Bezpečnost níže)
 7. **`RegistraceService`** / **`MojeEmailService`** / **`MojeHesloService`** /
-   **`ResetHeslaService`** — správa účtu: veřejná registrace (vždy role
-   `ASISTENTKA`), samoobslužná změna emailu i hesla přihlášeným uživatelem
-   a reset zapomenutého hesla přes token zaslaný emailem (`EmailOdesilatel`,
-   entita `ResetHesla` - ukládá se jen hash tokenu, ne token samotný)
-8. **`NavigaceModelAdvice`** / **`GlobalExceptionHandler`** — první schová
-   odkazy na stránky, ke kterým přihlášená role stejně nemá přístup, druhý
-   zajistí, že appka nikdy neukáže Spring "Whitelabel Error Page", ale
-   vždy srozumitelnou `chyba.html`
+   **`ResetHeslaService`** — správa účtu: veřejná registrace, samoobslužná
+   změna emailu i hesla přihlášeným uživatelem a reset zapomenutého hesla
+   přes token zaslaný emailem (`EmailOdesilatel`, entita `ResetHesla` -
+   ukládá se jen hash tokenu, ne token samotný)
+8. **`GlobalExceptionHandler`** — zajistí, že appka nikdy neukáže Spring
+   "Whitelabel Error Page", ale vždy srozumitelnou `chyba.html`
 9. **`GenerovaneDokumentyUklidRunner`** — při startu appky a pak jednou denně
    smaže z disku fyzické soubory starých vygenerovaných dokumentů (viz
    sekce `/historie` výše)
@@ -249,32 +247,26 @@ případů nevadí.
   stránky, které samy o sobě slouží k získání přístupu: `/login`, `/registrace`,
   `/zapomenute-heslo` a `/nove-heslo`. Uživatelé se ukládají v databázi
   (entita `Uzivatel`), přihlašovacím identifikátorem je **email**, heslo jako
-  BCrypt hash.
-  - **Role** (`Role` - `ADMIN` / `ASISTENTKA`) omezují, co účet smí (viz
-    `SecurityConfig`, `DokgenUserDetailsService`). `ADMIN` smí vše včetně
-    správy šablon (`/sablony/**`). `ASISTENTKA` smí jen spravovat klienty a
-    generovat dokumenty - na šablony se nedostane (nav odkaz "Šablony" se jí
-    ani nezobrazí, a přímý pokus o URL appka odmítne srozumitelnou stránkou
-    "Přístup odepřen" místo pádu appky).
+  BCrypt hash. Appka nerozlišuje role - každý přihlášený účet má úplně
+  stejná oprávnění, včetně správy šablon (`/sablony/**`) a zakládání dalších
+  účtů.
   - **Výchozí účty** se při prvním startu nahrají z `application.properties`
-    (`dokgen.uzivatele`): `admin@dokgen.local` (role `ADMIN`) a
-    `asistentka@dokgen.local` (role `ASISTENTKA`). Heslo se bere z proměnných
-    prostředí `DOKGEN_HESLO` / `DOKGEN_HESLO_ASISTENTKA` - pokud nejsou
-    nastavené, appka při prvním startu každému z nich **vygeneruje náhodné
-    jednorázové heslo a vypíše ho do logu** (stejný princip jako vestavěné
-    Spring Security hlášení "Using generated security password"). Appka tedy
-    nikdy neběží se známým/uhodnutelným výchozím heslem. Po prvním startu
-    appka bere účty výhradně z databáze - úprava properties později už nic
-    nepřepíše.
+    (`dokgen.uzivatele`): `admin@dokgen.local` a `asistentka@dokgen.local`
+    (jen jako výchozí příklad, obě mají stejná oprávnění). Heslo se bere
+    z proměnných prostředí `DOKGEN_HESLO` / `DOKGEN_HESLO_ASISTENTKA` - pokud
+    nejsou nastavené, appka při prvním startu každému z nich **vygeneruje
+    náhodné jednorázové heslo a vypíše ho do logu** (stejný princip jako
+    vestavěné Spring Security hlášení "Using generated security password").
+    Appka tedy nikdy neběží se známým/uhodnutelným výchozím heslem. Po prvním
+    startu appka bere účty výhradně z databáze - úprava properties později
+    už nic nepřepíše.
   - **Registrace nového účtu** (`/registrace`) je veřejná - kdokoli si může
-    sám založit účet (email, heslo 2×/min. 8 znaků). Nový účet vždy dostane
-    roli `ASISTENTKA` - formulář roli nenabízí, aby si nikdo nemohl sám
-    udělit vyšší oprávnění (`RegistraceService`). Založení účtu s rolí
-    `ADMIN` jde jen přes `application.properties`/proměnné prostředí výše.
-  - **Vlastní účet** (`/nastaveni`, přístupné jakékoli přihlášené roli) -
-    změna přihlašovacího emailu (vyžaduje současné heslo, po změně appka
-    odhlásí a nechá přihlásit se znovu pod novým emailem, viz `MojeEmailService`)
-    a odkaz na změnu hesla (`/moje-heslo`, viz `MojeHesloService`).
+    sám založit účet (email, heslo 2×/min. 8 znaků) se stejnými oprávněními
+    jako kterýkoli jiný (`RegistraceService`).
+  - **Vlastní účet** (`/nastaveni`) - změna přihlašovacího emailu (vyžaduje
+    současné heslo, po změně appka odhlásí a nechá přihlásit se znovu pod
+    novým emailem, viz `MojeEmailService`) a odkaz na změnu hesla
+    (`/moje-heslo`, viz `MojeHesloService`).
   - **Zapomenuté heslo** (`/zapomenute-heslo`) pošle na zadaný email (pokud
     v appce existuje) odkaz s jednorázovým tokenem platným 45 minut
     (`ResetHeslaService`, entita `ResetHesla`) - ukládá se jen hash tokenu
@@ -311,14 +303,13 @@ případů nevadí.
 Pokrývá generování dokumentů, správu šablon včetně ochrany proti zip bombě a
 verzování (`DocumentGeneratorServiceTest`), export do PDF včetně lámání
 dlouhých slov (`PdfExportServiceTest`), historii a stránkování
-(`HistorieServiceTest`), veřejnou registraci účtu vč. formátu emailu a
-vždy přidělené role `ASISTENTKA` (`RegistraceServiceTest`), kontrolu formátu
-emailu (`EmailValidaceTest`), samoobslužnou změnu vlastního emailu
-(`MojeEmailServiceTest`) a hesla (`MojeHesloServiceTest`), reset zapomenutého
-hesla vč. expirace a jednorázovosti tokenu (`ResetHeslaServiceTest`),
-načítání uživatelů a promítnutí role i zámku účtu do autorit
-(`DokgenUserDetailsServiceTest`), generování hesel při prvním startu a
-doplnění role u starších účtů (`UzivateleSeederTest`), konzolový nástroj na
+(`HistorieServiceTest`), veřejnou registraci účtu vč. formátu emailu
+(`RegistraceServiceTest`), kontrolu formátu emailu (`EmailValidaceTest`),
+samoobslužnou změnu vlastního emailu (`MojeEmailServiceTest`) a hesla
+(`MojeHesloServiceTest`), reset zapomenutého hesla vč. expirace a
+jednorázovosti tokenu (`ResetHeslaServiceTest`), načítání uživatelů a
+promítnutí zámku účtu do autorit (`DokgenUserDetailsServiceTest`), generování
+hesel při prvním startu (`UzivateleSeederTest`), konzolový nástroj na
 zmenu hesla (`ZmenaHeslaRunnerTest`), ochranu proti zkoušení hesel
 (`PrihlaseniOmezovacTest`), napojení na přihlašovací události Spring Security
 (`PrihlaseniUdalostiListenerTest`), automatické otevření prohlížeče po startu
@@ -326,12 +317,11 @@ zmenu hesla (`ZmenaHeslaRunnerTest`), ochranu proti zkoušení hesel
 (`SablonySeederTest`), úklid starých vygenerovaných dokumentů
 (`GenerovaneDokumentyUklidRunnerTest`), sanitizaci názvů stahovaných souborů
 (`NazevSouboruTest`), chybové stránky místo Spring "Whitelabel Error Page"
-(`GlobalExceptionHandlerTest`), schování nedostupných odkazů v navigaci podle
-role (`NavigaceModelAdviceTest`) a webové endpointy včetně validace a
+(`GlobalExceptionHandlerTest`) a webové endpointy včetně validace a
 chybových stavů napříč všemi controllery - klienti a generování dokumentů
 (`KlientControllerTest`), správa šablon (`SablonaControllerTest`), registrace
 (`RegistraceControllerTest`), nastavení účtu (`NastaveniControllerTest`),
 změna hesla (`MojeHesloControllerTest`), reset zapomenutého hesla
 (`ResetHeslaControllerTest`), filtr v historii (`HistorieControllerTest`),
-přihlašovací stránka (`PrihlaseniControllerTest`) a skutečné vynucení rolí i
-veřejného přístupu na úrovni `SecurityConfig` (`RoliAOpravneniTest`).
+přihlašovací stránka (`PrihlaseniControllerTest`) a skutečné vynucení
+veřejného přístupu na úrovni `SecurityConfig` (`VerejnyPristupTest`).

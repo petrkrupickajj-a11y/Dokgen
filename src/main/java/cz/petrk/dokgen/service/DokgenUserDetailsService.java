@@ -8,12 +8,13 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
+import java.util.Collections;
+
 /**
  * Prihlasovaci ucty appky se nactou z databaze (entita Uzivatel) - jednak
  * ty vestavene (viz UzivateleSeeder, ktery je pri prvnim startu naplni
- * z application.properties), jednak nove pridane pres /registrace. Role
- * uctu (ADMIN/ASISTENTKA) se preda Spring Security jako autorita ROLE_xxx -
- * SecurityConfig podle ni omezuje pristup na /sablony a /registrace.
+ * z application.properties), jednak nove pridane pres /registrace. Kazdy
+ * ucet ma stejna opravneni, zadne role se nerozlisuji.
  *
  * Kazdy ucet se navic ptá PrihlaseniOmezovac, jestli neni docasne zamceny
  * kvuli opakovanym neuspesnym pokusum - Spring Security pak samo odmitne
@@ -36,7 +37,7 @@ public class DokgenUserDetailsService implements UserDetailsService {
                 .orElseThrow(() -> new UsernameNotFoundException("Uživatel \"" + email + "\" neexistuje"));
         return User.withUsername(uzivatel.getEmail())
                 .password(uzivatel.getHeslo())
-                .roles(uzivatel.getRole().name())
+                .authorities(Collections.emptyList())
                 .accountLocked(prihlaseniOmezovac.jeZamceno(email))
                 .build();
     }

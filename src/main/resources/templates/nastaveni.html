@@ -12,7 +12,7 @@
     <a href="#hlavni-obsah" class="skip-link" th:text="#{spolecne.preskocit}">Přeskočit na obsah</a>
     <nav>
         <a href="/" th:text="#{nav.klienti}">Klienti</a>
-        <a href="/sablony" th:if="${jeAdmin}" th:text="#{nav.sablony}">Šablony</a>
+        <a href="/sablony" th:text="#{nav.sablony}">Šablony</a>
         <a href="/historie" th:text="#{nav.historie}">Historie</a>
         <a href="/nastaveni" class="aktivni" th:text="#{nav.nastaveni}">Nastavení</a>
         <form th:action="@{/logout}" method="post" style="display:inline" class="form-odhlasit" th:attr="data-potvrzeni=#{nav.odhlasit.confirm}">
@@ -56,7 +56,7 @@
         <a class="button" href="/moje-heslo" th:text="#{nastaveni.heslo.odkaz}">Změnit heslo</a>
     </div>
 
-    <div class="panel" th:if="${jeAdmin}">
+    <div class="panel">
         <h2 th:text="#{nastaveni.ucet.nadpis}">Účty</h2>
         <a class="button" href="/registrace" th:text="#{nastaveni.ucet.odkaz}">Založit nový účet</a>
     </div>

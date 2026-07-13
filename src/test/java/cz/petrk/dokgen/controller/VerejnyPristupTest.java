@@ -21,21 +21,20 @@ import java.util.List;
 import static org.mockito.BDDMockito.given;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.forwardedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 
 /**
- * Overuje skutecne vynuceni roli na urovni SecurityConfig (ne jen na urovni
- * jednotlivych controlleru) - ostatni *ControllerTest tridy pouzivaji cisty
- * @WebMvcTest slice bez SecurityConfig, kde @WithMockUser prochazi bez
- * ohledu na roli (jen Boot default "authenticated"). Tady je SecurityConfig
- * explicitne naimportovana, aby se autorizacni pravidla (hasRole("ADMIN")
- * na /sablony, permitAll na /registrace) opravdu vyhodnotila.
+ * Overuje skutecne vynuceni pristupovych pravidel na urovni SecurityConfig
+ * (ne jen na urovni jednotlivych controlleru) - ostatni *ControllerTest
+ * tridy pouzivaji cisty @WebMvcTest slice bez SecurityConfig, kde
+ * @WithMockUser prochazi bez ohledu na to, jestli je stranka ve skutecnosti
+ * permitAll. Tady je SecurityConfig explicitne naimportovana, aby se
+ * permitAll pravidla opravdu vyhodnotila.
  */
 @WebMvcTest(controllers = {SablonaController.class, RegistraceController.class, PrihlaseniController.class, MojeHesloController.class, NastaveniController.class, ResetHeslaController.class, ZdraviController.class})
 @Import(SecurityConfig.class)
-class RoliAOpravneniTest {
+class VerejnyPristupTest {
 
     @Autowired
     private MockMvc mockMvc;
@@ -61,26 +60,15 @@ class RoliAOpravneniTest {
     @MockBean
     private ResetHeslaService resetHeslaService;
 
+    // Kazdy prihlaseny ucet ma stejna opravneni - /sablony vyzaduje jen prihlaseni, ne konkretni roli.
     @Test
-    @WithMockUser(roles = "ADMIN")
-    void adminMaPristupNaSablony() throws Exception {
+    @WithMockUser
+    void prihlasenyUzivatelMaPristupNaSablony() throws Exception {
         given(documentGeneratorService.getDostupneSablony()).willReturn(List.of());
 
         mockMvc.perform(get("/sablony"))
                 .andExpect(status().isOk())
                 .andExpect(view().name("sablony"));
-    }
-
-    // AccessDeniedHandlerImpl nastavi 403 a forwarduje na /pristup-odepren (viz SecurityConfig) -
-    // v @WebMvcTest slice prostredi ale mockovany RequestDispatcher forward doopravdy nededispatchuje
-    // (na rozdil od realne bezici appky), takze tu jde overit jen status a cilova URL, ne uz
-    // vykresleny obsah stranky /pristup-odepren (ten overuje PrihlaseniControllerTest).
-    @Test
-    @WithMockUser(roles = "ASISTENTKA")
-    void asistentkaNemaPristupNaSablony() throws Exception {
-        mockMvc.perform(get("/sablony"))
-                .andExpect(status().isForbidden())
-                .andExpect(forwardedUrl("/pristup-odepren"));
     }
 
     // Registrace je verejna - i uplne neprihlaseny navstevnik se musi dostat
@@ -92,20 +80,17 @@ class RoliAOpravneniTest {
                 .andExpect(view().name("registrace"));
     }
 
-    // Na rozdil od /sablony a /registrace neni /moje-heslo omezene na ADMIN -
-    // zmenit si vlastni heslo musi jit jakekoli prihlasene roli.
     @Test
-    @WithMockUser(roles = "ASISTENTKA")
-    void asistentkaMaPristupNaZmenuVlastnihoHesla() throws Exception {
+    @WithMockUser
+    void prihlasenyUzivatelMaPristupNaZmenuVlastnihoHesla() throws Exception {
         mockMvc.perform(get("/moje-heslo"))
                 .andExpect(status().isOk())
                 .andExpect(view().name("moje-heslo"));
     }
 
-    // Stejny princip jako /moje-heslo - stranka Nastaveni neni omezena na ADMIN.
     @Test
-    @WithMockUser(username = "asistentka@dokgen.local", roles = "ASISTENTKA")
-    void asistentkaMaPristupNaNastaveni() throws Exception {
+    @WithMockUser
+    void prihlasenyUzivatelMaPristupNaNastaveni() throws Exception {
         mockMvc.perform(get("/nastaveni"))
                 .andExpect(status().isOk())
                 .andExpect(view().name("nastaveni"));

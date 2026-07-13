@@ -5,13 +5,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Seznam prihlasovacich uctu appky (viz application.properties,
- * dokgen.uzivatele[N].email / [N].heslo / [N].role). Role urcuje opravneni
- * (ADMIN/ASISTENTKA, viz entita Role a SecurityConfig) - kdyz neni u uctu
- * nastavena, UzivateleSeeder mu prideli ADMIN (zpetne kompatibilni chovani
- * pro pripad, ze nekdo appku upgraduje ze starsi verze bez rolí).
- */
+/** Seznam prihlasovacich uctu appky (viz application.properties, dokgen.uzivatele[N].email / [N].heslo). */
 @ConfigurationProperties(prefix = "dokgen")
 public class UzivateleProperties {
 
@@ -28,7 +22,6 @@ public class UzivateleProperties {
     public static class Ucet {
         private String email;
         private String heslo;
-        private String role;
 
         public String getEmail() {
             return email;
@@ -44,14 +37,6 @@ public class UzivateleProperties {
 
         public void setHeslo(String heslo) {
             this.heslo = heslo;
-        }
-
-        public String getRole() {
-            return role;
-        }
-
-        public void setRole(String role) {
-            this.role = role;
         }
     }
 }

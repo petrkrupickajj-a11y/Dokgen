@@ -1,7 +1,6 @@
 package cz.petrk.dokgen.service;
 
 import cz.petrk.dokgen.config.UzivateleProperties;
-import cz.petrk.dokgen.entity.Role;
 import cz.petrk.dokgen.entity.Uzivatel;
 import cz.petrk.dokgen.repository.UzivatelRepository;
 import org.slf4j.Logger;
@@ -11,7 +10,6 @@ import org.springframework.boot.ApplicationRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
-import java.util.Locale;
 import java.util.UUID;
 
 /**
@@ -27,12 +25,6 @@ import java.util.UUID;
  * heslo a jednou ho vypise do logu - stejny princip jako vestaveny
  * "Using generated security password" u Spring Security, jen na urovni
  * nasich vlastnich uctu.
- *
- * Zaroven pri kazdem startu doplni roli uctum, ktere v databazi existuji
- * z doby pred zavedenim roli (sloupec "role" u nich zustal po Hibernate
- * ddl-auto=update prazdny/null) - bez tohohle by DokgenUserDetailsService
- * pri jejich prihlaseni spadl na NullPointerException. Dostanou ADMIN, aby
- * si zachovaly puvodni chovani "vsechny ucty maji stejna prava".
  */
 @Component
 public class UzivateleSeeder implements ApplicationRunner {
@@ -53,8 +45,6 @@ public class UzivateleSeeder implements ApplicationRunner {
 
     @Override
     public void run(ApplicationArguments args) {
-        doplnChybejiciRoli();
-
         for (UzivateleProperties.Ucet ucet : uzivateleProperties.getUzivatele()) {
             if (uzivatelRepository.existsByEmail(ucet.getEmail())) {
                 continue;
@@ -76,25 +66,7 @@ public class UzivateleSeeder implements ApplicationRunner {
                         """, ucet.getEmail(), heslo);
             }
 
-            uzivatelRepository.save(new Uzivatel(ucet.getEmail(), passwordEncoder.encode(heslo), role(ucet)));
+            uzivatelRepository.save(new Uzivatel(ucet.getEmail(), passwordEncoder.encode(heslo)));
         }
-    }
-
-    private void doplnChybejiciRoli() {
-        for (Uzivatel uzivatel : uzivatelRepository.findAll()) {
-            if (uzivatel.getRole() == null) {
-                uzivatel.setRole(Role.ADMIN);
-                uzivatelRepository.save(uzivatel);
-            }
-        }
-    }
-
-    /** Kdyz uzivatel v application.properties roli neuvede, dostane ADMIN (viz Uzivatel/UzivateleProperties). */
-    private Role role(UzivateleProperties.Ucet ucet) {
-        String role = ucet.getRole();
-        if (role == null || role.isBlank()) {
-            return Role.ADMIN;
-        }
-        return Role.valueOf(role.trim().toUpperCase(Locale.ROOT));
     }
 }

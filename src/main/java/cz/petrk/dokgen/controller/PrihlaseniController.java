@@ -30,9 +30,8 @@ public class PrihlaseniController {
         return "login";
     }
 
-    // Cil accessDeniedHandler (SecurityConfig) pro prihlaseneho, ale neopravneneho uzivatele
-    // (napr. ASISTENTKA na /sablony) - @RequestMapping bez metody, protoze forward zachova
-    // puvodni HTTP metodu pozadavku (GET i POST).
+    // Cil accessDeniedHandler (SecurityConfig), kdyby autorizace z nejakeho duvodu selhala -
+    // @RequestMapping bez metody, protoze forward zachova puvodni HTTP metodu pozadavku (GET i POST).
     @RequestMapping("/pristup-odepren")
     @ResponseStatus(HttpStatus.FORBIDDEN)
     public String pristupOdepren(Model model) {

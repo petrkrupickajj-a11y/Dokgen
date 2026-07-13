@@ -1,7 +1,6 @@
 package cz.petrk.dokgen.service;
 
 import cz.petrk.dokgen.config.UzivateleProperties;
-import cz.petrk.dokgen.entity.Role;
 import cz.petrk.dokgen.entity.Uzivatel;
 import cz.petrk.dokgen.repository.UzivatelRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -33,14 +32,9 @@ class UzivateleSeederTest {
     }
 
     private void pridejUcet(String email, String heslo) {
-        pridejUcet(email, heslo, null);
-    }
-
-    private void pridejUcet(String email, String heslo, String role) {
         UzivateleProperties.Ucet ucet = new UzivateleProperties.Ucet();
         ucet.setEmail(email);
         ucet.setHeslo(heslo);
-        ucet.setRole(role);
         properties.getUzivatele().add(ucet);
     }
 
@@ -90,53 +84,5 @@ class UzivateleSeederTest {
         verify(uzivatelRepository, Mockito.times(2)).save(zachyceny.capture());
         assertThat(zachyceny.getAllValues().get(0).getHeslo())
                 .isNotEqualTo(zachyceny.getAllValues().get(1).getHeslo());
-    }
-
-    @Test
-    void ucetSNastavenouRoliJiPouzije() {
-        pridejUcet("asistentka@dokgen.local", "zadaneHeslo123", "ASISTENTKA");
-        given(uzivatelRepository.existsByEmail("asistentka@dokgen.local")).willReturn(false);
-
-        seeder.run(new DefaultApplicationArguments());
-
-        ArgumentCaptor<Uzivatel> zachyceny = ArgumentCaptor.forClass(Uzivatel.class);
-        verify(uzivatelRepository).save(zachyceny.capture());
-        assertThat(zachyceny.getValue().getRole()).isEqualTo(Role.ASISTENTKA);
-    }
-
-    @Test
-    void existujiciUcetBezRoleVDatabaziDostaneDodatecneAdmina() {
-        // Simuluje ucet vytvoreny pred zavedenim roli - Hibernate ddl-auto=update
-        // pro nej pridal sloupec "role" jako null.
-        Uzivatel legacyUcet = new Uzivatel("stary-ucet@dokgen.local", "hash");
-        legacyUcet.setRole(null);
-        given(uzivatelRepository.findAll()).willReturn(java.util.List.of(legacyUcet));
-
-        seeder.run(new DefaultApplicationArguments());
-
-        assertThat(legacyUcet.getRole()).isEqualTo(Role.ADMIN);
-        verify(uzivatelRepository).save(legacyUcet);
-    }
-
-    @Test
-    void existujiciUcetSJizNastavenouRoliSeNeprepisuje() {
-        Uzivatel ucetSRoli = new Uzivatel("existujici@dokgen.local", "hash", Role.ASISTENTKA);
-        given(uzivatelRepository.findAll()).willReturn(java.util.List.of(ucetSRoli));
-
-        seeder.run(new DefaultApplicationArguments());
-
-        verify(uzivatelRepository, never()).save(ucetSRoli);
-    }
-
-    @Test
-    void ucetBezNastaveneRoleDostaneAdmina() {
-        pridejUcet("admin@dokgen.local", "zadaneHeslo123");
-        given(uzivatelRepository.existsByEmail("admin@dokgen.local")).willReturn(false);
-
-        seeder.run(new DefaultApplicationArguments());
-
-        ArgumentCaptor<Uzivatel> zachyceny = ArgumentCaptor.forClass(Uzivatel.class);
-        verify(uzivatelRepository).save(zachyceny.capture());
-        assertThat(zachyceny.getValue().getRole()).isEqualTo(Role.ADMIN);
     }
 }
