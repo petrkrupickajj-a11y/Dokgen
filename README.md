@@ -246,40 +246,53 @@ případů nevadí.
   klientů, takže nic v ní není přístupné bez přihlášení. Výjimkou jsou jen
   stránky, které samy o sobě slouží k získání přístupu: `/login`, `/registrace`,
   `/zapomenute-heslo` a `/nove-heslo`. Uživatelé se ukládají v databázi
-  (entita `Uzivatel`), přihlašovacím identifikátorem je **email**, heslo jako
-  BCrypt hash. Appka nerozlišuje role - každý přihlášený účet má úplně
-  stejná oprávnění, včetně správy šablon (`/sablony/**`) a zakládání dalších
-  účtů.
+  (entita `Uzivatel`), přihlašovacím identifikátorem je **email** (appka ho
+  vždy ukládá i porovnává v malých písmenech, bez okolních mezer), heslo jako
+  BCrypt hash. Appka nerozlišuje role - každý aktivní účet má úplně stejná
+  oprávnění, včetně správy šablon (`/sablony/**`) a schvalování dalších účtů.
   - **Výchozí účty** se při prvním startu nahrají z `application.properties`
     (`dokgen.uzivatele`): `admin@dokgen.local` a `asistentka@dokgen.local`
-    (jen jako výchozí příklad, obě mají stejná oprávnění). Heslo se bere
-    z proměnných prostředí `DOKGEN_HESLO` / `DOKGEN_HESLO_ASISTENTKA` - pokud
-    nejsou nastavené, appka při prvním startu každému z nich **vygeneruje
-    náhodné jednorázové heslo a vypíše ho do logu** (stejný princip jako
-    vestavěné Spring Security hlášení "Using generated security password").
-    Appka tedy nikdy neběží se známým/uhodnutelným výchozím heslem. Po prvním
-    startu appka bere účty výhradně z databáze - úprava properties později
-    už nic nepřepíše.
+    (jen jako výchozí příklad, obě mají stejná oprávnění) a jsou rovnou
+    aktivní. Heslo se bere z proměnných prostředí `DOKGEN_HESLO` /
+    `DOKGEN_HESLO_ASISTENTKA` - pokud nejsou nastavené, appka při prvním
+    startu každému z nich **vygeneruje náhodné jednorázové heslo a vypíše ho
+    do logu** (stejný princip jako vestavěné Spring Security hlášení "Using
+    generated security password"). Appka tedy nikdy neběží se
+    známým/uhodnutelným výchozím heslem. Po prvním startu appka bere účty
+    výhradně z databáze - úprava properties později už nic nepřepíše.
   - **Registrace nového účtu** (`/registrace`) je veřejná - kdokoli si může
-    sám založit účet (email, heslo 2×/min. 8 znaků) se stejnými oprávněními
-    jako kterýkoli jiný (`RegistraceService`).
+    sám založit účet (email, heslo 2×/min. 8, max. 72 znaků), ale nový účet
+    **čeká na schválení** (`aktivni = false`) a přihlášení mu appka odmítne
+    se srozumitelnou zprávou, dokud ho někdo aktivní neschválí. Stránka
+    `/uzivatele` (dostupná každému přihlášenému přes odkaz v navigaci) ukazuje
+    čekající žádosti se dvěma akcemi - **Schválit** (účet může od teď
+    přihlásit) a **Zamítnout** (účet se smaže) - a pod nimi seznam aktivních
+    účtů, odkud jde účet i smazat (kromě toho, pod kterým jsi zrovna
+    přihlášený - appka se tak nemůže sama zamknout ven). Proti hromadnému
+    zakládání účtů appka navíc limituje počet registrací z jedné IP adresy
+    (`IpOmezovac`, 5 za 15 minut).
   - **Vlastní účet** (`/nastaveni`) - změna přihlašovacího emailu (vyžaduje
     současné heslo, po změně appka odhlásí a nechá přihlásit se znovu pod
     novým emailem, viz `MojeEmailService`) a odkaz na změnu hesla
     (`/moje-heslo`, viz `MojeHesloService`).
-  - **Zapomenuté heslo** (`/zapomenute-heslo`) pošle na zadaný email (pokud
-    v appce existuje) odkaz s jednorázovým tokenem platným 45 minut
-    (`ResetHeslaService`, entita `ResetHesla`) - ukládá se jen hash tokenu
-    (SHA-256), ne token samotný, stejný princip jako u hesel. Appka na
-    žádost o reset vždy odpoví stejnou zprávou bez ohledu na to, jestli
-    zadaný email v databázi existuje, aby neprozradila, které účty v ní jsou.
-    Pro odeslání emailu appka potřebuje SMTP - konfigurace (`application.properties`,
-    `spring.mail.*`) čte server/port/přihlašovací údaje z proměnných prostředí
-    `SMTP_HOST` / `SMTP_PORT` / `SMTP_USERNAME` / `SMTP_PASSWORD` / `SMTP_FROM`;
-    bez nastavených `SMTP_USERNAME`/`SMTP_PASSWORD` appka odeslání jen
-    zaloguje jako chybu, zbytek appky funguje dál normálně. Bez ohledu na
-    tohle appka pořád nabízí i konzolový nástroj (nevyžaduje běžící web ani
-    SMTP):
+  - **Zapomenuté heslo** (`/zapomenute-heslo`, taky limitované přes
+    `IpOmezovac`) pošle na zadaný email (pokud v appce existuje) odkaz s
+    jednorázovým tokenem platným 45 minut (`ResetHeslaService`, entita
+    `ResetHesla`, staré/použité tokeny appka jednou denně sama maže) -
+    ukládá se jen hash tokenu (SHA-256), ne token samotný, stejný princip
+    jako u hesel. Appka na žádost o reset vždy odpoví stejnou zprávou bez
+    ohledu na to, jestli zadaný email v databázi existuje, aby neprozradila,
+    které účty v ní jsou. Adresa v odkazu se bere výhradně z konfigurace
+    (`dokgen.zaklad-url`), nikdy z hlavičky příchozího požadavku - útočník si
+    tak nemůže vyžádáním resetu s podvrženou hlavičkou nechat poslat odkaz
+    vedoucí na svou vlastní doménu. Pro odeslání emailu appka potřebuje
+    SMTP - konfigurace (`application.properties`, `spring.mail.*`) čte
+    server/port/přihlašovací údaje z proměnných prostředí `SMTP_HOST` /
+    `SMTP_PORT` / `SMTP_USERNAME` / `SMTP_PASSWORD` / `SMTP_FROM`; bez
+    nastavených `SMTP_USERNAME`/`SMTP_PASSWORD` appka odeslání jen zaloguje
+    jako chybu (spolu s odkazem, aby šlo heslo změnit i bez SMTP), zbytek
+    appky funguje dál normálně. Bez ohledu na tohle appka pořád nabízí i
+    konzolový nástroj (nevyžaduje běžící web ani SMTP):
     ```bash
     ./mvnw spring-boot:run -Dspring-boot.run.arguments="--zmenit-heslo=email:nove-heslo"
     ```
