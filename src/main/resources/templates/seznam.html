@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org" lang="cs">
+<html xmlns:th="http://www.thymeleaf.org" th:lang="${#locale.language}">
 <head>
     <meta charset="UTF-8">
     <title th:text="#{seznam.title}">Generátor dokumentů</title>
@@ -20,9 +20,9 @@
             <button type="submit" class="nav-odhlasit" th:text="#{nav.odhlasit}">Odhlásit se</button>
         </form>
         <div class="jazyky">
-            <a href="#" data-lang="cs" th:classappend="${#locale.language == 'cs'} ? ' aktivni-jazyk'">CS</a>
-            <a href="#" data-lang="en" th:classappend="${#locale.language == 'en'} ? ' aktivni-jazyk'">EN</a>
-            <a href="#" data-lang="de" th:classappend="${#locale.language == 'de'} ? ' aktivni-jazyk'">DE</a>
+            <a href="#" data-lang="cs" th:classappend="${#locale.language == 'cs'} ? ' aktivni-jazyk'" th:attr="aria-current=${#locale.language == 'cs'} ? 'true' : null">CS</a>
+            <a href="#" data-lang="en" th:classappend="${#locale.language == 'en'} ? ' aktivni-jazyk'" th:attr="aria-current=${#locale.language == 'en'} ? 'true' : null">EN</a>
+            <a href="#" data-lang="de" th:classappend="${#locale.language == 'de'} ? ' aktivni-jazyk'" th:attr="aria-current=${#locale.language == 'de'} ? 'true' : null">DE</a>
         </div>
     </nav>
 
