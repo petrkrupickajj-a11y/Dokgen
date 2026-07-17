@@ -40,11 +40,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
@@ -399,6 +401,39 @@ class DocumentGeneratorServiceTest {
         ArgumentCaptor<SablonaVerze> zachycena = ArgumentCaptor.forClass(SablonaVerze.class);
         verify(sablonaVerzeRepository).save(zachycena.capture());
         assertThat(uloziste.existuje(zachycena.getValue().getNazevSouboru())).isFalse();
+    }
+
+    @Test
+    void soubezneUpravyRuznychSablonJsouSerializovane() throws Exception {
+        pripravSablonu(21L, "Faktura", "faktura.docx");
+        pripravSablonu(22L, "Smlouva o poskytování služeb", "smlouva.docx");
+        given(sablonaRepository.save(any(Sablona.class))).willAnswer(vyvolani -> vyvolani.getArgument(0));
+
+        AtomicInteger bezicichSoucasne = new AtomicInteger(0);
+        AtomicInteger nejvicSoucasne = new AtomicInteger(0);
+        given(sablonaVerzeRepository.save(any(SablonaVerze.class))).willAnswer(vyvolani -> {
+            int aktualne = bezicichSoucasne.incrementAndGet();
+            nejvicSoucasne.updateAndGet(dosud -> Math.max(dosud, aktualne));
+            Thread.sleep(50);
+            bezicichSoucasne.decrementAndGet();
+            return vyvolani.getArgument(0);
+        });
+
+        MockMultipartFile soubor1 = new MockMultipartFile("soubor", "novy1.docx",
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document", nactiPlatnyDocx());
+        MockMultipartFile soubor2 = new MockMultipartFile("soubor", "novy2.docx",
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document", nactiPlatnyDocx());
+
+        Thread vlakno1 = new Thread(() -> assertThatCode(() -> service.nahradSouborSablony(21L, soubor1)).doesNotThrowAnyException());
+        Thread vlakno2 = new Thread(() -> assertThatCode(() -> service.nahradSouborSablony(22L, soubor2)).doesNotThrowAnyException());
+        vlakno1.start();
+        vlakno2.start();
+        vlakno1.join();
+        vlakno2.join();
+
+        // I kdyz jde o dve ruzne sablony, metoda je synchronized na cele service -
+        // bez zamku by se oba zapisy prekryvaly (nejvicSoucasne by bylo 2).
+        assertThat(nejvicSoucasne.get()).isEqualTo(1);
     }
 
     @Test

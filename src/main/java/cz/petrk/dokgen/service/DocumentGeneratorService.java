@@ -176,8 +176,15 @@ public class DocumentGeneratorService {
      * Nahradi obsah existujici sablony (stejne id, stejny nazev) upravenou
      * verzi souboru - napr. po editaci ve Wordu/Google dokumentech a
      * zpetnem exportu do .docx. Funguje i pro vestavene sablony.
+     *
+     * Synchronized - jde o cteni-uprava-zapis stejneho souboru na disku
+     * (nejdriv se aktualni obsah ulozi jako verze, pak se prepise novym),
+     * takze dva soubezne pozadavky (i na ruzne sablony) by se bez zamku
+     * mohly prekryvat. Pro appku pouzivanou jednotkami lidi v ramci jedne
+     * firmy je jednoduchy zamek na cele metode dostatecny - sprava sablon
+     * neni operace, ktera by potrebovala vysokou propustnost.
      */
-    public void nahradSouborSablony(Long id, MultipartFile novySoubor) throws IOException {
+    public synchronized void nahradSouborSablony(Long id, MultipartFile novySoubor) throws IOException {
         Sablona sablona = sablonaRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException(zprava("chyba.sablona.neexistuje", id)));
 
@@ -214,8 +221,10 @@ public class DocumentGeneratorService {
      * Obnovi starsi verzi jako aktualni obsah sablony. Aktualni obsah se
      * pred prepsanim taky ulozi jako nova verze, aby se k nemu dalo pozdeji
      * vratit - obnoveni tedy nikdy nic trvale neztrati.
+     *
+     * Synchronized ze stejneho duvodu jako nahradSouborSablony vyse.
      */
-    public void obnovVerzi(Long sablonaId, Long verzeId) throws IOException {
+    public synchronized void obnovVerzi(Long sablonaId, Long verzeId) throws IOException {
         Sablona sablona = sablonaRepository.findById(sablonaId)
                 .orElseThrow(() -> new IllegalArgumentException(zprava("chyba.sablona.neexistuje", sablonaId)));
         SablonaVerze verze = najdiVerzi(sablonaId, verzeId);
