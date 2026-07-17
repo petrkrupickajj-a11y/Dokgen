@@ -1,5 +1,6 @@
 package cz.petrk.dokgen.config;
 
+import cz.petrk.dokgen.service.IpOmezovac;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -12,6 +13,7 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.security.web.access.AccessDeniedHandlerImpl;
 import org.springframework.security.web.authentication.AuthenticationFailureHandler;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 import java.time.Clock;
 
@@ -72,8 +74,9 @@ public class SecurityConfig {
     }
 
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain filterChain(HttpSecurity http, IpOmezovac ipOmezovac) throws Exception {
         http
+                .addFilterBefore(new LoginIpOmezovacFilter(ipOmezovac), UsernamePasswordAuthenticationFilter.class)
                 .authorizeHttpRequests(autorizace -> autorizace
                         // Staticky CSS a prepinac jazyka musi jit natahnout i na neprihlasenych
                         // strankach (login, registrace, zapomenute heslo), jinak by byly
