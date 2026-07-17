@@ -57,6 +57,7 @@
             </div>
         </form>
 
+        <div class="chybovy-box" role="alert" th:if="${chybaHistorie}" th:text="${chybaHistorie}"></div>
         <div class="info-box" role="status" th:if="${otevrenyDokument}" th:text="#{historie.otevrenyDokument(${otevrenyDokument})}"></div>
 
         <p class="pocet-zaznamu" th:if="${celkemZaznamu > 0}"

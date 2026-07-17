@@ -29,6 +29,7 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -144,16 +145,26 @@ public class KlientController {
         return "generovat";
     }
 
-    // Samotne vygenerovani a stazeni dokumentu (Word nebo PDF)
+    // Samotne vygenerovani a stazeni dokumentu (Word nebo PDF). Neplatny klient/sablona
+    // (typicky smazani mezi nactenim /generovat/{id} a odeslanim formulare) vrati
+    // uzivatele zpet na vyber sablony s vysvetlujici hlaskou - stejny princip jako
+    // u SablonaController.nahrat/nahradit/smazat - misto obecne stranky chyba.html.
     @PostMapping("/generovat/{id}")
-    public ResponseEntity<byte[]> generujDokument(@PathVariable Long id,
-                                                   @RequestParam Long sablonaId,
-                                                   @RequestParam(defaultValue = "WORD") String format) throws IOException {
+    public Object generujDokument(@PathVariable Long id,
+                                   @RequestParam Long sablonaId,
+                                   @RequestParam(defaultValue = "WORD") String format,
+                                   RedirectAttributes redirectAttributes) throws IOException {
         String formatOvereny = overFormat(format);
 
-        Klient klient = Vyhledani.najdiNeboVyhod(klientRepository.findById(id), zprava("chyba.klient.neexistuje", id));
-
-        VysledekGenerovani vysledek = documentGeneratorService.vygenerujDokument(klient, sablonaId);
+        Klient klient;
+        VysledekGenerovani vysledek;
+        try {
+            klient = Vyhledani.najdiNeboVyhod(klientRepository.findById(id), zprava("chyba.klient.neexistuje", id));
+            vysledek = documentGeneratorService.vygenerujDokument(klient, sablonaId);
+        } catch (IllegalArgumentException e) {
+            redirectAttributes.addFlashAttribute("chybaGenerovani", e.getMessage());
+            return "redirect:/generovat/" + id;
+        }
         Sablona sablona = vysledek.sablona();
 
         byte[] dokument;

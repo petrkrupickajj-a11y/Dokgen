@@ -29,6 +29,8 @@
     <h1 id="hlavni-obsah" th:text="#{generovat.h1} + ' ' + ${klient.jmeno} + ' ' + ${klient.prijmeni}"></h1>
 
     <div class="panel">
+        <div class="chybovy-box" role="alert" th:if="${chybaGenerovani}" th:text="${chybaGenerovani}"></div>
+
         <form id="formularGenerovani" th:action="@{/generovat/{id}(id=${klient.id})}" method="post">
             <label for="sablonaId" th:text="#{generovat.vyber_sablonu}">Vyber šablonu</label>
             <select id="sablonaId" name="sablonaId">

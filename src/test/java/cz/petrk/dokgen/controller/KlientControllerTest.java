@@ -33,6 +33,7 @@ import static org.springframework.security.test.web.servlet.request.SecurityMock
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.flash;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.model;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
@@ -319,14 +320,15 @@ class KlientControllerTest {
     }
 
     @Test
-    void generujDokumentProNeexistujicihoKlientaVratiChybovouStranku() throws Exception {
+    void generujDokumentProNeexistujicihoKlientaSePresmerujeZpetSHlaskou() throws Exception {
         given(klientRepository.findById(999L)).willReturn(Optional.empty());
 
         mockMvc.perform(post("/generovat/999").with(csrf())
                         .param("sablonaId", "1")
                         .param("format", "WORD"))
-                .andExpect(status().isNotFound())
-                .andExpect(view().name("chyba"));
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/generovat/999"))
+                .andExpect(flash().attributeExists("chybaGenerovani"));
     }
 
     @Test
@@ -341,7 +343,7 @@ class KlientControllerTest {
     }
 
     @Test
-    void generujDokumentSNeznamouSablonouVratiChybovouStranku() throws Exception {
+    void generujDokumentSNeznamouSablonouSePresmerujeZpetSHlaskou() throws Exception {
         Klient klient = vzorovyKlient(1L);
         given(klientRepository.findById(1L)).willReturn(Optional.of(klient));
         given(documentGeneratorService.vygenerujDokument(any(Klient.class), eq(999L)))
@@ -350,8 +352,9 @@ class KlientControllerTest {
         mockMvc.perform(post("/generovat/1").with(csrf())
                         .param("sablonaId", "999")
                         .param("format", "WORD"))
-                .andExpect(status().isNotFound())
-                .andExpect(view().name("chyba"));
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/generovat/1"))
+                .andExpect(flash().attribute("chybaGenerovani", "Neznámá šablona (id 999)"));
     }
 
     @Test

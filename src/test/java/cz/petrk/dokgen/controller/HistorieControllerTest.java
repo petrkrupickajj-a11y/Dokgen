@@ -118,12 +118,13 @@ class HistorieControllerTest {
     }
 
     @Test
-    void zobrazitNeexistujiciZaznamVratiChybovouStranku() throws Exception {
+    void zobrazitNeexistujiciZaznamSePresmerujeZpetSHlaskou() throws Exception {
         given(vygenerovanyDokumentRepository.findById(999L)).willReturn(Optional.empty());
 
         mockMvc.perform(get("/historie/999/zobrazit"))
-                .andExpect(status().isNotFound())
-                .andExpect(view().name("chyba"));
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/historie"))
+                .andExpect(flash().attributeExists("chybaHistorie"));
     }
 
     // Napr. soubor mezitim zmizel z disku, nebo appka bezi bez GUI - uloziste
