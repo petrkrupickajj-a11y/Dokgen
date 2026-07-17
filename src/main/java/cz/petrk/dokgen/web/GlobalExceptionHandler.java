@@ -41,6 +41,15 @@ public class GlobalExceptionHandler {
         return "chyba";
     }
 
+    // Neplatna hodnota v pozadavku (napr. neznamy format dokumentu) - na rozdil
+    // od IllegalArgumentException vyse nejde o neexistujici zaznam, takze 400, ne 404.
+    @ExceptionHandler(NeplatnyVstupException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public String neplatnyVstup(NeplatnyVstupException ex, Model model) {
+        model.addAttribute("zprava", ex.getMessage());
+        return "chyba";
+    }
+
     // Preklep v URL / neexistujici stranka - musi mit vlastni handler, jinak by ji
     // odchytil obecny Exception handler nize a chybne vratil 500 misto 404.
     @ExceptionHandler(NoResourceFoundException.class)

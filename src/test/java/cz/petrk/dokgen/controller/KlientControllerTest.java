@@ -304,7 +304,7 @@ class KlientControllerTest {
         mockMvc.perform(post("/generovat/1").with(csrf())
                         .param("sablonaId", "1")
                         .param("format", "EXE"))
-                .andExpect(status().isNotFound())
+                .andExpect(status().isBadRequest())
                 .andExpect(view().name("chyba"));
 
         verify(documentGeneratorService, never()).vygenerujDokument(any(), any());

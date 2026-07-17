@@ -51,6 +51,16 @@ class GlobalExceptionHandlerTest {
     }
 
     @Test
+    void neplatnyVstupVratiChybovouStrankuSPuvodniZpravou() {
+        Model model = new ExtendedModelMap();
+
+        String view = handler.neplatnyVstup(new NeplatnyVstupException("Neplatný formát dokumentu \"EXE\"."), model);
+
+        assertThat(view).isEqualTo("chyba");
+        assertThat(model.getAttribute("zprava")).isEqualTo("Neplatný formát dokumentu \"EXE\".");
+    }
+
+    @Test
     void strankaNenalezenaVratiChybovouStrankuSPratelskouZpravou() {
         Model model = new ExtendedModelMap();
 

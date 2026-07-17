@@ -10,6 +10,7 @@ import cz.petrk.dokgen.service.PdfExportService;
 import cz.petrk.dokgen.service.VygenerovanyDokumentUlozisteService;
 import cz.petrk.dokgen.service.VysledekGenerovani;
 import cz.petrk.dokgen.util.NazevSouboru;
+import cz.petrk.dokgen.web.NeplatnyVstupException;
 import jakarta.validation.Valid;
 import org.springframework.context.MessageSource;
 import org.springframework.context.i18n.LocaleContextHolder;
@@ -177,7 +178,7 @@ public class KlientController {
     private String overFormat(String format) {
         String formatVelkymi = format == null ? "" : format.toUpperCase(Locale.ROOT);
         if (!formatVelkymi.equals("WORD") && !formatVelkymi.equals("PDF")) {
-            throw new IllegalArgumentException(zprava("chyba.generovat.format_neplatny", format));
+            throw new NeplatnyVstupException(zprava("chyba.generovat.format_neplatny", format));
         }
         return formatVelkymi;
     }
