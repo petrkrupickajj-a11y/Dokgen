@@ -73,10 +73,32 @@ public class SecurityConfig {
         };
     }
 
+    // Appka nacita font (Google Fonts) a ma par mistnich inline <script>/style="" -
+    // CSP je tak nastavena co nejpismeji, aniz by je rozbila (odtud 'unsafe-inline'
+    // pro script-src/style-src). I tak vyrazne omezi, odkud appka smi nacitat
+    // zdroje, a zabrani napr. vlozeni <script src="..."> na cizi domenu, kdyby
+    // se nekde v budoucnu objevila XSS mezera.
+    private static final String CSP = "default-src 'self'; "
+            + "script-src 'self' 'unsafe-inline'; "
+            + "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
+            + "font-src 'self' https://fonts.gstatic.com; "
+            + "img-src 'self' data:; "
+            + "form-action 'self'; "
+            + "frame-ancestors 'self'; "
+            + "base-uri 'self'";
+
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http, IpOmezovac ipOmezovac) throws Exception {
         http
                 .addFilterBefore(new LoginIpOmezovacFilter(ipOmezovac), UsernamePasswordAuthenticationFilter.class)
+                .headers(headers -> headers
+                        .contentSecurityPolicy(csp -> csp.policyDirectives(CSP))
+                        // Prohlizec HSTS hlavicku respektuje jen kdyz uz appku videl pres HTTPS -
+                        // pri lokalnim behu na http://localhost tedy nic nezmeni, ale u realneho
+                        // nasazeni za HTTPS vynuti, aby se prohlizec uz napřiste sam prepnul z http:// na https://.
+                        .httpStrictTransportSecurity(hsts -> hsts
+                                .includeSubDomains(true)
+                                .maxAgeInSeconds(31536000)))
                 .authorizeHttpRequests(autorizace -> autorizace
                         // Staticky CSS a prepinac jazyka musi jit natahnout i na neprihlasenych
                         // strankach (login, registrace, zapomenute heslo), jinak by byly
