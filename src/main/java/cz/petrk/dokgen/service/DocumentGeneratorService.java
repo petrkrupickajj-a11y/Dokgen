@@ -241,7 +241,15 @@ public class DocumentGeneratorService {
         byte[] aktualniObsah = uloziste.nacti(sablona.getNazevSouboru());
         String nazevSouboruVerze = UUID.randomUUID() + ".docx";
         uloziste.uloz(nazevSouboruVerze, aktualniObsah);
-        sablonaVerzeRepository.save(new SablonaVerze(sablona.getId(), nazevSouboruVerze));
+        try {
+            sablonaVerzeRepository.save(new SablonaVerze(sablona.getId(), nazevSouboruVerze));
+        } catch (RuntimeException e) {
+            // Kdyby DB zapis selhal az po ulozeni souboru na disk, soubor by tam
+            // zustal navzdy jako neuklizeny "sirotek" bez jakekoliv reference -
+            // smazeme ho, aby DB a disk zustaly v souladu.
+            uloziste.smaz(nazevSouboruVerze);
+            throw e;
+        }
     }
 
     private void overPlatnyDocx(byte[] obsah) {

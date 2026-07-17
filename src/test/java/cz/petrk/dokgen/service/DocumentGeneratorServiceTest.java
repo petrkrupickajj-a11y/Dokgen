@@ -383,6 +383,25 @@ class DocumentGeneratorServiceTest {
     }
 
     @Test
+    void nahradSouborSablonySelhaniUlozeniVerzeSmazeOsireleSouboreNaDisku() throws IOException {
+        pripravSablonu(20L, "Smlouva", "smlouva.docx");
+        Sablona sablona = sablonaRepository.findById(20L).orElseThrow();
+        ReflectionTestUtils.setField(sablona, "id", 20L);
+        given(sablonaVerzeRepository.save(any(SablonaVerze.class))).willThrow(new RuntimeException("DB nedostupna"));
+
+        MockMultipartFile soubor = new MockMultipartFile("soubor", "novy.docx",
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document", nactiPlatnyDocx());
+
+        assertThatThrownBy(() -> service.nahradSouborSablony(20L, soubor))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessage("DB nedostupna");
+
+        ArgumentCaptor<SablonaVerze> zachycena = ArgumentCaptor.forClass(SablonaVerze.class);
+        verify(sablonaVerzeRepository).save(zachycena.capture());
+        assertThat(uloziste.existuje(zachycena.getValue().getNazevSouboru())).isFalse();
+    }
+
+    @Test
     void getVerzeVraciVerzeZRepositoryeProDanouSablonu() throws IOException {
         pripravSablonu(11L, "Faktura", "faktura.docx");
         given(sablonaRepository.existsById(11L)).willReturn(true);
