@@ -130,6 +130,36 @@ class KlientControllerTest {
     }
 
     @Test
+    void seznamStrankujePri21Klientech() throws Exception {
+        List<Klient> klienti = new java.util.ArrayList<>();
+        for (long i = 1; i <= 21; i++) {
+            klienti.add(vzorovyKlient(i));
+        }
+        given(klientRepository.findAll(any(Sort.class))).willReturn(klienti);
+
+        mockMvc.perform(get("/"))
+                .andExpect(status().isOk())
+                .andExpect(model().attribute("celkemStranek", 2))
+                .andExpect(model().attribute("strana", 0))
+                .andExpect(model().attribute("klienti", klienti.subList(0, 20)));
+
+        mockMvc.perform(get("/").param("strana", "1"))
+                .andExpect(status().isOk())
+                .andExpect(model().attribute("strana", 1))
+                .andExpect(model().attribute("klienti", klienti.subList(20, 21)));
+    }
+
+    @Test
+    void seznamSPrilisVysokymCislemStrankyVratiPosledniStranku() throws Exception {
+        given(klientRepository.findAll(any(Sort.class))).willReturn(List.of(vzorovyKlient(1L)));
+
+        mockMvc.perform(get("/").param("strana", "99"))
+                .andExpect(status().isOk())
+                .andExpect(model().attribute("strana", 0))
+                .andExpect(model().attribute("celkemStranek", 1));
+    }
+
+    @Test
     void ulozitPlatnehoKlientaPresmerujeNaSeznam() throws Exception {
         mockMvc.perform(post("/ulozit")
                         .with(csrf())

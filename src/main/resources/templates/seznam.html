@@ -77,6 +77,14 @@
 
         <p class="prazdno" th:if="${klienti.isEmpty() and (hledat == null or hledat.isBlank())}" th:text="#{seznam.prazdno}">Zatím tu nikdo není. Přidej prvního klienta.</p>
         <p class="prazdno" th:if="${klienti.isEmpty() and hledat != null and !hledat.isBlank()}" th:text="#{seznam.prazdno_hledani(${hledat})}">Žádný klient neodpovídá hledání.</p>
+
+        <div class="strankovani" th:if="${celkemStranek > 1}">
+            <a th:if="${strana > 0}"
+               th:href="@{/(hledat=${hledat}, strana=${strana - 1})}" th:text="#{historie.predchozi}">« Předchozí</a>
+            <span class="aktualni" th:text="#{historie.stranka(${strana + 1}, ${celkemStranek})}">Strana</span>
+            <a th:if="${strana + 1 < celkemStranek}"
+               th:href="@{/(hledat=${hledat}, strana=${strana + 1})}" th:text="#{historie.dalsi}">Další »</a>
+        </div>
     </div>
 
     <button type="button" class="napoveda-tlacitko" aria-expanded="false" aria-controls="napoveda-panel" th:aria-label="#{spolecne.napoveda.label}">?</button>

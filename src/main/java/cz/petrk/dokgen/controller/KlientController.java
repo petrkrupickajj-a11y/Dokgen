@@ -38,6 +38,10 @@ import java.util.Locale;
 @Controller
 public class KlientController {
 
+    // Stejna velikost stranky jako HistorieService.VELIKOST_STRANKY - zadny
+    // specialni duvod pro jinou hodnotu, jen konzistence napric appkou.
+    private static final int VELIKOST_STRANKY = 20;
+
     private final KlientRepository klientRepository;
     private final DocumentGeneratorService documentGeneratorService;
     private final PdfExportService pdfExportService;
@@ -65,8 +69,12 @@ public class KlientController {
 
     // Uvodni stranka - seznam klientu, volitelne zuzeny hledanim (jmeno,
     // prijmeni, telefon nebo email) - uzitecne, jakmile klientu prubeha vic.
+    // Strankovano stejne jako /historie - filtrovani i strankovani probiha
+    // v pameti, pocet klientu v teto appce nikdy nebude tak velky, aby to vadilo.
     @GetMapping("/")
-    public String seznam(@RequestParam(required = false) String hledat, Model model) {
+    public String seznam(@RequestParam(required = false) String hledat,
+                          @RequestParam(defaultValue = "0") int strana,
+                          Model model) {
         List<Klient> klienti = klientRepository.findAll(Sort.by("prijmeni", "jmeno"));
         if (hledat != null && !hledat.isBlank()) {
             String hledany = hledat.trim().toLowerCase(Locale.ROOT);
@@ -75,8 +83,16 @@ public class KlientController {
                             || obsahuje(k.getTelefon(), hledany) || obsahuje(k.getEmail(), hledany))
                     .toList();
         }
-        model.addAttribute("klienti", klienti);
+
+        int celkemStranek = Math.max(1, (int) Math.ceil(klienti.size() / (double) VELIKOST_STRANKY));
+        int stranaOverena = Math.max(0, Math.min(strana, celkemStranek - 1));
+        int od = stranaOverena * VELIKOST_STRANKY;
+        List<Klient> stranka = klienti.subList(od, Math.min(od + VELIKOST_STRANKY, klienti.size()));
+
+        model.addAttribute("klienti", stranka);
         model.addAttribute("hledat", hledat);
+        model.addAttribute("strana", stranaOverena);
+        model.addAttribute("celkemStranek", celkemStranek);
         return "seznam";
     }
 
