@@ -11,8 +11,10 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.willThrow;
 import static org.mockito.Mockito.verify;
 
 class ResetHeslaUklidRunnerTest {
@@ -44,5 +46,15 @@ class ResetHeslaUklidRunnerTest {
         runner.uklidNaplanovane();
 
         verify(repository).deleteByPouzitTrueOrVyprsiDneBefore(LocalDateTime.now(hodiny));
+    }
+
+    // Selhani uklidu (napr. docasne nedostupna DB) nesmi shodit start cele appky -
+    // run() bezi jako ApplicationRunner primo v SpringApplication.run().
+    @Test
+    void selhaniUkliduPriStartuNevyhodiVyjimku() {
+        willThrow(new RuntimeException("DB nedostupna"))
+                .given(repository).deleteByPouzitTrueOrVyprsiDneBefore(any(LocalDateTime.class));
+
+        assertThatCode(() -> runner.run(new DefaultApplicationArguments())).doesNotThrowAnyException();
     }
 }

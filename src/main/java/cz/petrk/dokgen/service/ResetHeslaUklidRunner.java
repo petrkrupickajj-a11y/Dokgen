@@ -52,10 +52,18 @@ public class ResetHeslaUklidRunner implements ApplicationRunner {
         uklid();
     }
 
+    // Na rozdil od GenerovaneDokumentyUklidRunner tu neni co delit na jednotlive
+    // polozky (jde o jeden hromadny DB dotaz) - kdyby ale selhal (napr. DB soubor
+    // docasne uzamceny), try/catch zajisti, ze to jen zaloguje varovani misto
+    // shozeni celeho startu appky - viz run() vyse, bezi jako ApplicationRunner.
     private void uklid() {
-        long smazano = repository.deleteByPouzitTrueOrVyprsiDneBefore(LocalDateTime.now(hodiny));
-        if (smazano > 0) {
-            LOG.info("Úklid tokenů na reset hesla: smazáno {} použitých nebo prošlých záznamů.", smazano);
+        try {
+            long smazano = repository.deleteByPouzitTrueOrVyprsiDneBefore(LocalDateTime.now(hodiny));
+            if (smazano > 0) {
+                LOG.info("Úklid tokenů na reset hesla: smazáno {} použitých nebo prošlých záznamů.", smazano);
+            }
+        } catch (RuntimeException e) {
+            LOG.warn("Úklid tokenů na reset hesla selhal.", e);
         }
     }
 }
