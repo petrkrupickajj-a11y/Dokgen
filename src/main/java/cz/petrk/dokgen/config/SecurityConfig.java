@@ -111,7 +111,7 @@ public class SecurityConfig {
                         // (ExceptionTranslationFilter to bralo jako neautorizovany pozadavek).
                         // Vlastni requestMatchers tady to spolehlive obejde.
                         .requestMatchers("/styles.css", "/jazyky.js", "/login", "/registrace",
-                                "/zapomenute-heslo", "/nove-heslo", "/zdravi").permitAll()
+                                "/zapomenute-heslo", "/nove-heslo", "/zdravi", "/actuator/health").permitAll()
                         .anyRequest().authenticated())
                 .formLogin(formLogin -> formLogin
                         .loginPage("/login")

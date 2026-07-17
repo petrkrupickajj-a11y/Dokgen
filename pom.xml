@@ -58,6 +58,14 @@
             <artifactId>spring-boot-starter-mail</artifactId>
         </dependency>
 
+        <!-- /actuator/health - skutecny healthcheck (DB dostupnost) pro monitoring/load balancer.
+             Neni to totez jako /zdravi (ZdraviController) - to je jen rychla kontrola "appka bezi",
+             pouzivana appkou samotnou pred spustenim druhe instance z .exe, viz DokgenApplication. -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+
         <!-- Vestavena souborova databaze - zadna instalace navic -->
         <dependency>
             <groupId>com.h2database</groupId>
