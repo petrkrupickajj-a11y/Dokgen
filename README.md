@@ -128,6 +128,15 @@ Appku vypneš v terminálu klávesou `Ctrl+C`.
 Databáze se ukládá do souboru `./data/dokgen.mv.db` — data ti tedy
 zůstanou zachovaná i po restartu.
 
+**Záloha databáze** - appka sama žádnou zálohu nedělá, jen se stará o úklid
+starých vygenerovaných dokumentů (viz `/historie` výše). Soubor
+`./data/dokgen.mv.db` obsahuje veškerá data appky včetně osobních údajů
+klientů, takže při reálném používání stojí za to ho pravidelně kopírovat
+někam mimo tenhle počítač (cloudové úložiště, externí disk...) - stačí ho
+zkopírovat, appka mezitím nemusí běžet ani se vypínat. Appka musí být
+vypnutá jen v okamžiku samotného kopírování, aby se nezkopíroval soubor
+uprostřed zápisu.
+
 Appka umí **česky, anglicky a německy** — přepínač (CS/EN/DE) je v pravém
 horním rohu na každé stránce (v navigaci, nebo jako plovoucí odkazy na
 stránkách bez navigace jako přihlášení). Zvolený jazyk appka pamatuje v
