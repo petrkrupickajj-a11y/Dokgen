@@ -7,6 +7,7 @@ import cz.petrk.dokgen.entity.SmazanaVestavenaSablona;
 import cz.petrk.dokgen.repository.SablonaRepository;
 import cz.petrk.dokgen.repository.SablonaVerzeRepository;
 import cz.petrk.dokgen.repository.SmazanaVestavenaSablonaRepository;
+import cz.petrk.dokgen.util.Vyhledani;
 import org.apache.poi.xwpf.usermodel.IBody;
 import org.apache.poi.xwpf.usermodel.XWPFDocument;
 import org.apache.poi.xwpf.usermodel.XWPFFooter;
@@ -86,8 +87,7 @@ public class DocumentGeneratorService {
     }
 
     public VysledekGenerovani vygenerujDokument(Klient klient, Long sablonaId) throws IOException {
-        Sablona sablona = sablonaRepository.findById(sablonaId)
-                .orElseThrow(() -> new IllegalArgumentException(zprava("chyba.sablona.neznama", sablonaId)));
+        Sablona sablona = Vyhledani.najdiNeboVyhod(sablonaRepository.findById(sablonaId), zprava("chyba.sablona.neznama", sablonaId));
 
         Map<String, String> data = sestavData(klient);
         Pattern vzorPlaceholderu = sestavVzorPlaceholderu(data.keySet());
@@ -146,8 +146,7 @@ public class DocumentGeneratorService {
      * startu appky znovu needelal - smazani vestavene sablony je tedy trvale.
      */
     public void smazSablonu(Long id) throws IOException {
-        Sablona sablona = sablonaRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException(zprava("chyba.sablona.neexistuje", id)));
+        Sablona sablona = Vyhledani.najdiNeboVyhod(sablonaRepository.findById(id), zprava("chyba.sablona.neexistuje", id));
 
         List<SablonaVerze> verze = sablonaVerzeRepository.findBySablonaIdOrderByUlozenoDneDesc(id);
         for (SablonaVerze v : verze) {
@@ -167,8 +166,7 @@ public class DocumentGeneratorService {
      * dokumentech nebo jinem nastroji mimo appku.
      */
     public byte[] stahniSablonu(Long id) throws IOException {
-        Sablona sablona = sablonaRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException(zprava("chyba.sablona.neexistuje", id)));
+        Sablona sablona = Vyhledani.najdiNeboVyhod(sablonaRepository.findById(id), zprava("chyba.sablona.neexistuje", id));
         return uloziste.nacti(sablona.getNazevSouboru());
     }
 
@@ -185,8 +183,7 @@ public class DocumentGeneratorService {
      * neni operace, ktera by potrebovala vysokou propustnost.
      */
     public synchronized void nahradSouborSablony(Long id, MultipartFile novySoubor) throws IOException {
-        Sablona sablona = sablonaRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException(zprava("chyba.sablona.neexistuje", id)));
+        Sablona sablona = Vyhledani.najdiNeboVyhod(sablonaRepository.findById(id), zprava("chyba.sablona.neexistuje", id));
 
         if (novySoubor.isEmpty()) {
             throw new IllegalArgumentException(zprava("chyba.sablona.soubor_povinny"));
@@ -225,8 +222,7 @@ public class DocumentGeneratorService {
      * Synchronized ze stejneho duvodu jako nahradSouborSablony vyse.
      */
     public synchronized void obnovVerzi(Long sablonaId, Long verzeId) throws IOException {
-        Sablona sablona = sablonaRepository.findById(sablonaId)
-                .orElseThrow(() -> new IllegalArgumentException(zprava("chyba.sablona.neexistuje", sablonaId)));
+        Sablona sablona = Vyhledani.najdiNeboVyhod(sablonaRepository.findById(sablonaId), zprava("chyba.sablona.neexistuje", sablonaId));
         SablonaVerze verze = najdiVerzi(sablonaId, verzeId);
         byte[] obsahVerze = uloziste.nacti(verze.getNazevSouboru());
 
@@ -238,8 +234,7 @@ public class DocumentGeneratorService {
     }
 
     private SablonaVerze najdiVerzi(Long sablonaId, Long verzeId) {
-        SablonaVerze verze = sablonaVerzeRepository.findById(verzeId)
-                .orElseThrow(() -> new IllegalArgumentException(zprava("chyba.sablona.verze_neexistuje", verzeId)));
+        SablonaVerze verze = Vyhledani.najdiNeboVyhod(sablonaVerzeRepository.findById(verzeId), zprava("chyba.sablona.verze_neexistuje", verzeId));
         if (!verze.getSablonaId().equals(sablonaId)) {
             throw new IllegalArgumentException(zprava("chyba.sablona.verze_neexistuje", verzeId));
         }

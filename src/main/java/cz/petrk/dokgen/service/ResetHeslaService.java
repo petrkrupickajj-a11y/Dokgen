@@ -5,6 +5,7 @@ import cz.petrk.dokgen.entity.Uzivatel;
 import cz.petrk.dokgen.repository.ResetHeslaRepository;
 import cz.petrk.dokgen.repository.UzivatelRepository;
 import cz.petrk.dokgen.util.EmailValidace;
+import cz.petrk.dokgen.util.Vyhledani;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.MessageSource;
@@ -107,8 +108,7 @@ public class ResetHeslaService {
 
     /** Nastavi nove heslo pro ucet patrici k platnemu tokenu a token spotrebuje. */
     public void nastavNoveHeslo(String token, String noveHeslo, String noveHesloZnovu) {
-        ResetHesla resetHesla = najdiPlatnyToken(token)
-                .orElseThrow(() -> new IllegalArgumentException(zprava("chyba.reset_hesla.token_neplatny")));
+        ResetHesla resetHesla = Vyhledani.najdiNeboVyhod(najdiPlatnyToken(token), zprava("chyba.reset_hesla.token_neplatny"));
 
         if (noveHeslo == null || noveHeslo.length() < MIN_DELKA_HESLA) {
             throw new IllegalArgumentException(zprava("chyba.reset_hesla.heslo_kratke", MIN_DELKA_HESLA));

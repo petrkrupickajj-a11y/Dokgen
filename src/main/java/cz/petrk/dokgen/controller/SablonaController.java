@@ -5,6 +5,7 @@ import cz.petrk.dokgen.repository.SablonaRepository;
 import cz.petrk.dokgen.service.DocumentGeneratorService;
 import cz.petrk.dokgen.service.SablonaUlozisteService;
 import cz.petrk.dokgen.util.NazevSouboru;
+import cz.petrk.dokgen.util.Vyhledani;
 import org.springframework.context.MessageSource;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.http.HttpHeaders;
@@ -84,8 +85,7 @@ public class SablonaController {
     // Stazeni aktualniho obsahu sablony - napr. pro upravu ve Wordu/Google dokumentech
     @GetMapping("/sablony/{id}/stahnout")
     public ResponseEntity<byte[]> stahnout(@PathVariable Long id) throws IOException {
-        Sablona sablona = sablonaRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException(zprava("chyba.sablona.neexistuje", id)));
+        Sablona sablona = Vyhledani.najdiNeboVyhod(sablonaRepository.findById(id), zprava("chyba.sablona.neexistuje", id));
         byte[] obsah = documentGeneratorService.stahniSablonu(id);
 
         String nazevSouboru = NazevSouboru.ocisti(sablona.getNazev()) + ".docx";
@@ -117,8 +117,7 @@ public class SablonaController {
     // proleti jako IOException do GlobalExceptionHandler, ktery ukaze srozumitelnou chyba.html.
     @PostMapping("/sablony/{id}/upravit")
     public String upravit(@PathVariable Long id, RedirectAttributes redirectAttributes) throws IOException {
-        Sablona sablona = sablonaRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException(zprava("chyba.sablona.neexistuje", id)));
+        Sablona sablona = Vyhledani.najdiNeboVyhod(sablonaRepository.findById(id), zprava("chyba.sablona.neexistuje", id));
 
         uloziste.otevriVeVychoziAplikaci(sablona.getNazevSouboru());
 
@@ -139,8 +138,7 @@ public class SablonaController {
     // Historie starsich verzi sablony - vznikaji pri kazdem nahrazeni obsahu (viz nahradit())
     @GetMapping("/sablony/{id}/verze")
     public String verze(@PathVariable Long id, Model model) {
-        Sablona sablona = sablonaRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException(zprava("chyba.sablona.neexistuje", id)));
+        Sablona sablona = Vyhledani.najdiNeboVyhod(sablonaRepository.findById(id), zprava("chyba.sablona.neexistuje", id));
         model.addAttribute("sablona", sablona);
         model.addAttribute("verze", documentGeneratorService.getVerze(id));
         return "verze";
@@ -148,8 +146,7 @@ public class SablonaController {
 
     @GetMapping("/sablony/{id}/verze/{verzeId}/stahnout")
     public ResponseEntity<byte[]> stahnoutVerzi(@PathVariable Long id, @PathVariable Long verzeId) throws IOException {
-        Sablona sablona = sablonaRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException(zprava("chyba.sablona.neexistuje", id)));
+        Sablona sablona = Vyhledani.najdiNeboVyhod(sablonaRepository.findById(id), zprava("chyba.sablona.neexistuje", id));
         byte[] obsah = documentGeneratorService.stahniVerzi(id, verzeId);
 
         String nazevSouboru = NazevSouboru.ocisti(sablona.getNazev()) + "_verze.docx";

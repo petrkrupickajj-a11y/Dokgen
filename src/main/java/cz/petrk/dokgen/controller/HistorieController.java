@@ -5,6 +5,7 @@ import cz.petrk.dokgen.repository.VygenerovanyDokumentRepository;
 import cz.petrk.dokgen.service.HistorieService;
 import cz.petrk.dokgen.service.VygenerovanyDokumentUlozisteService;
 import cz.petrk.dokgen.util.NazevSouboru;
+import cz.petrk.dokgen.util.Vyhledani;
 import org.springframework.context.MessageSource;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.http.ContentDisposition;
@@ -74,9 +75,8 @@ public class HistorieController {
     // skutecneho typu navratove hodnoty za behu.
     @GetMapping("/historie/{id}/zobrazit")
     public Object zobrazit(@PathVariable Long id, RedirectAttributes redirectAttributes) throws IOException {
-        VygenerovanyDokument zaznam = vygenerovanyDokumentRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException(
-                        zpravy.getMessage("chyba.historie.neexistuje", new Object[]{id}, LocaleContextHolder.getLocale())));
+        VygenerovanyDokument zaznam = Vyhledani.najdiNeboVyhod(vygenerovanyDokumentRepository.findById(id),
+                zpravy.getMessage("chyba.historie.neexistuje", new Object[]{id}, LocaleContextHolder.getLocale()));
 
         if ("PDF".equalsIgnoreCase(zaznam.getFormat())) {
             byte[] obsah = uloziste.nacti(zaznam.getId(), zaznam.getFormat());

@@ -4,6 +4,7 @@ import cz.petrk.dokgen.entity.Uzivatel;
 import cz.petrk.dokgen.repository.ResetHeslaRepository;
 import cz.petrk.dokgen.repository.UzivatelRepository;
 import cz.petrk.dokgen.util.EmailValidace;
+import cz.petrk.dokgen.util.Vyhledani;
 import org.springframework.context.MessageSource;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.stereotype.Service;
@@ -67,8 +68,7 @@ public class SpravaUctuService {
      */
     @Transactional
     public void smaz(Long id, String prihlasenyEmail) {
-        Uzivatel uzivatel = uzivatelRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException(zprava("chyba.uzivatele.neexistuje")));
+        Uzivatel uzivatel = Vyhledani.najdiNeboVyhod(uzivatelRepository.findById(id), zprava("chyba.uzivatele.neexistuje"));
         if (EmailValidace.normalizuj(uzivatel.getEmail()).equals(EmailValidace.normalizuj(prihlasenyEmail))) {
             throw new IllegalArgumentException(zprava("chyba.uzivatele.nelze_smazat_sebe"));
         }
@@ -78,8 +78,7 @@ public class SpravaUctuService {
     }
 
     private Uzivatel najdiCekajici(Long id) {
-        Uzivatel uzivatel = uzivatelRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException(zprava("chyba.uzivatele.neexistuje")));
+        Uzivatel uzivatel = Vyhledani.najdiNeboVyhod(uzivatelRepository.findById(id), zprava("chyba.uzivatele.neexistuje"));
         if (uzivatel.jeAktivni()) {
             throw new IllegalArgumentException(zprava("chyba.uzivatele.jiz_aktivni"));
         }

@@ -10,6 +10,7 @@ import cz.petrk.dokgen.service.PdfExportService;
 import cz.petrk.dokgen.service.VygenerovanyDokumentUlozisteService;
 import cz.petrk.dokgen.service.VysledekGenerovani;
 import cz.petrk.dokgen.util.NazevSouboru;
+import cz.petrk.dokgen.util.Vyhledani;
 import cz.petrk.dokgen.web.NeplatnyVstupException;
 import jakarta.validation.Valid;
 import org.springframework.context.MessageSource;
@@ -93,8 +94,7 @@ public class KlientController {
     // Formular pro upravu existujiciho klienta
     @GetMapping("/upravit/{id}")
     public String upravitFormular(@PathVariable Long id, Model model) {
-        Klient klient = klientRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException(zprava("chyba.klient.neexistuje", id)));
+        Klient klient = Vyhledani.najdiNeboVyhod(klientRepository.findById(id), zprava("chyba.klient.neexistuje", id));
         model.addAttribute("klient", klient);
         return "formular";
     }
@@ -122,8 +122,7 @@ public class KlientController {
     // Stranka s vyberem sablony pro konkretniho klienta
     @GetMapping("/generovat/{id}")
     public String vyberSablony(@PathVariable Long id, Model model) {
-        Klient klient = klientRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException(zprava("chyba.klient.neexistuje", id)));
+        Klient klient = Vyhledani.najdiNeboVyhod(klientRepository.findById(id), zprava("chyba.klient.neexistuje", id));
         model.addAttribute("klient", klient);
         model.addAttribute("sablony", documentGeneratorService.getDostupneSablony());
         return "generovat";
@@ -136,8 +135,7 @@ public class KlientController {
                                                    @RequestParam(defaultValue = "WORD") String format) throws IOException {
         String formatOvereny = overFormat(format);
 
-        Klient klient = klientRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException(zprava("chyba.klient.neexistuje", id)));
+        Klient klient = Vyhledani.najdiNeboVyhod(klientRepository.findById(id), zprava("chyba.klient.neexistuje", id));
 
         VysledekGenerovani vysledek = documentGeneratorService.vygenerujDokument(klient, sablonaId);
         Sablona sablona = vysledek.sablona();
@@ -190,8 +188,7 @@ public class KlientController {
     @GetMapping("/generovat/{id}/nahled")
     public ResponseEntity<byte[]> nahledDokumentu(@PathVariable Long id,
                                                    @RequestParam Long sablonaId) throws IOException {
-        Klient klient = klientRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException(zprava("chyba.klient.neexistuje", id)));
+        Klient klient = Vyhledani.najdiNeboVyhod(klientRepository.findById(id), zprava("chyba.klient.neexistuje", id));
 
         VysledekGenerovani vysledek = documentGeneratorService.vygenerujDokument(klient, sablonaId);
         byte[] pdf = pdfExportService.prevedNaPdf(vysledek.obsah());
