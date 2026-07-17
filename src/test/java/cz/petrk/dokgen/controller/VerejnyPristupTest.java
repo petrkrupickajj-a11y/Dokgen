@@ -12,7 +12,7 @@ import cz.petrk.dokgen.service.SablonaUlozisteService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.context.annotation.Import;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
@@ -40,28 +40,28 @@ class VerejnyPristupTest {
     @Autowired
     private MockMvc mockMvc;
 
-    @MockBean
+    @MockitoBean
     private DocumentGeneratorService documentGeneratorService;
 
-    @MockBean
+    @MockitoBean
     private SablonaRepository sablonaRepository;
 
-    @MockBean
+    @MockitoBean
     private SablonaUlozisteService uloziste;
 
-    @MockBean
+    @MockitoBean
     private RegistraceService registraceService;
 
-    @MockBean
+    @MockitoBean
     private MojeHesloService mojeHesloService;
 
-    @MockBean
+    @MockitoBean
     private MojeEmailService mojeEmailService;
 
-    @MockBean
+    @MockitoBean
     private ResetHeslaService resetHeslaService;
 
-    @MockBean
+    @MockitoBean
     private IpOmezovac ipOmezovac;
 
     // Kazdy prihlaseny ucet ma stejna opravneni - /sablony vyzaduje jen prihlaseni, ne konkretni roli.
