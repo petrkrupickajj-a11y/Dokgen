@@ -58,6 +58,29 @@ class IpOmezovacTest {
         assertThat(omezovac.povolPozadavek("5.6.7.8")).isTrue();
     }
 
+    @Test
+    void zaznamSUplynulymOknemSePromazePriDalsimPozadavku() {
+        omezovac.povolPozadavek("1.2.3.4");
+        assertThat(omezovac.pocetZaznamu()).isEqualTo(1);
+
+        hodiny.posunOMinut(16);
+        omezovac.povolPozadavek("5.6.7.8");
+
+        assertThat(omezovac.pocetZaznamu()).isEqualTo(1);
+    }
+
+    @Test
+    void aktivniZaznamSeNepromazeAniPriUklidu() {
+        for (int i = 0; i < 5; i++) {
+            omezovac.povolPozadavek("1.2.3.4");
+        }
+
+        hodiny.posunOMinut(10);
+        omezovac.povolPozadavek("5.6.7.8");
+
+        assertThat(omezovac.pocetZaznamu()).isEqualTo(2);
+    }
+
     /** Testovaci Clock s Instant, ktery se da v testu rucne posunout dopredu v case. */
     private static final class TestovaciHodiny extends Clock {
         private Instant cas;

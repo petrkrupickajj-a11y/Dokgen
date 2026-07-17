@@ -23,6 +23,11 @@ import java.util.concurrent.ConcurrentHashMap;
  * Zaznamy zijou jen v pameti procesu - restart appky je vynuluje. Pro
  * appku pouzivanou jednotkami lidi v ramci jedne firmy je to dostatecna
  * ochrana bez potreby externiho uloziste (Redis apod.).
+ *
+ * Mapa by jinak rostla neomezene - kazda IP adresa, ktera kdy poslala
+ * pozadavek, by v ni navzdy zustala. povolPozadavek proto pri kazdem
+ * zapisu promaze zaznamy s jiz uplynulym oknem (stejny princip jako
+ * PrihlaseniOmezovac.uklidStarychZaznamu).
  */
 @Component
 public class IpOmezovac {
@@ -53,7 +58,17 @@ public class IpOmezovac {
             return aktualni;
         });
 
+        uklidStarychZaznamu(ted);
         return zaznam.pocet <= MAX_POZADAVKU;
+    }
+
+    private void uklidStarychZaznamu(Instant ted) {
+        zaznamy.values().removeIf(zaznam -> ted.isAfter(zaznam.oknoKonci));
+    }
+
+    /** Jen pro testy - overeni, ze mapa opravdu neroste neomezene. */
+    int pocetZaznamu() {
+        return zaznamy.size();
     }
 
     private static final class Zaznam {
