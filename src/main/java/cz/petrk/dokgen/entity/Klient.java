@@ -1,5 +1,6 @@
 package cz.petrk.dokgen.entity;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -26,10 +27,12 @@ public class Klient {
 
     @NotBlank(message = "{klient.jmeno.povinne}")
     @Size(max = 100, message = "{klient.jmeno.dlouhe}")
+    @Column(nullable = false, length = 100)
     private String jmeno;
 
     @NotBlank(message = "{klient.prijmeni.povinne}")
     @Size(max = 100, message = "{klient.prijmeni.dlouhe}")
+    @Column(nullable = false, length = 100)
     private String prijmeni;
 
     @Pattern(regexp = "^$|^(\\+420 ?|00420 ?)?[0-9]{3} ?[0-9]{3} ?[0-9]{3}$",
@@ -39,10 +42,15 @@ public class Klient {
     @Email(message = "{klient.email.format}")
     private String email;
 
+    // Vychozi delka VARCHAR sloupce v Hibernate je 255 - bez explicitniho
+    // @Column(length=...) by @Size(max=...) na urovni validace a skutecny
+    // limit v databazi nesouhlasily (adresa/poznamka pripousti vic nez 255 znaku).
     @Size(max = 200, message = "{klient.adresa.dlouha}")
+    @Column(length = 200)
     private String adresa;
 
     @Size(max = 100, message = "{klient.mesto.dlouhe}")
+    @Column(length = 100)
     private String mesto;
 
     @Pattern(regexp = "^$|^\\d{3} ?\\d{2}$", message = "{klient.psc.format}")
@@ -52,6 +60,7 @@ public class Klient {
     private String ico;
 
     @Size(max = 1000, message = "{klient.poznamka.dlouha}")
+    @Column(length = 1000)
     private String poznamka;
 
     public Klient() {
