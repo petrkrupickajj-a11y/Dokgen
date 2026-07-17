@@ -52,7 +52,7 @@ public class GenerovaneDokumentyUklidRunner implements ApplicationRunner {
         uklid();
     }
 
-    @Scheduled(cron = "0 0 3 * * *")
+    @Scheduled(cron = "${dokgen.uklid.cron:0 0 3 * * *}")
     public void uklidNaplanovane() {
         uklid();
     }

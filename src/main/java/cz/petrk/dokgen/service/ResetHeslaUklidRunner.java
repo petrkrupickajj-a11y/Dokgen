@@ -46,7 +46,7 @@ public class ResetHeslaUklidRunner implements ApplicationRunner {
         uklid();
     }
 
-    @Scheduled(cron = "0 0 3 * * *")
+    @Scheduled(cron = "${dokgen.uklid.cron:0 0 3 * * *}")
     @Transactional
     public void uklidNaplanovane() {
         uklid();
