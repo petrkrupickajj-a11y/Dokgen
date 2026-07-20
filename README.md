@@ -215,14 +215,9 @@ lokálním běhu appky na stroji s grafickým rozhraním** - na headless serveru
 a místo pádu appka zobrazí srozumitelnou chybovou stránku.
 
 Pět vestavěných šablon (smlouva, cenová nabídka, faktura, protokol o předání,
-plná moc) jde od základu přegenerovat i programově přes `SablonyGenerator`
-(Apache POI) - výstup skončí v `src/main/resources/word-templates/`, odkud
-si ho appka při prvním startu (přes `SablonySeeder`) sama načte do databáze:
-
-```bash
-./mvnw compile
-java -cp target/classes cz.petrk.dokgen.tools.SablonyGenerator
-```
+plná moc) je uloženo v `src/main/resources/word-templates/`, odkud si je
+appka při prvním startu (přes `SablonySeeder`) sama načte do databáze -
+úpravy se dělají přímo v hotových .docx souborech ve Wordu.
 
 ## Přidání dalšího pole (např. DIČ, číslo účtu...)
 
