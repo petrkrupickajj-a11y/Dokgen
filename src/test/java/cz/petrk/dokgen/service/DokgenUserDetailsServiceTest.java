@@ -41,23 +41,13 @@ class DokgenUserDetailsServiceTest {
     }
 
     @Test
-    void aktivniUcetJeVracenJakoPovoleny() {
+    void ucetJeVracenJakoPovoleny() {
         given(uzivatelRepository.findByEmail("admin@dokgen.local")).willReturn(Optional.of(new Uzivatel("admin@dokgen.local", "$2a$hash")));
         given(prihlaseniOmezovac.jeZamceno("admin@dokgen.local")).willReturn(false);
 
         UserDetails detail = service.loadUserByUsername("admin@dokgen.local");
 
         assertThat(detail.isEnabled()).isTrue();
-    }
-
-    @Test
-    void neschvalenyUcetJeVracenJakoZakazany() {
-        given(uzivatelRepository.findByEmail("novak@example.com")).willReturn(Optional.of(new Uzivatel("novak@example.com", "$2a$hash", false)));
-        given(prihlaseniOmezovac.jeZamceno("novak@example.com")).willReturn(false);
-
-        UserDetails detail = service.loadUserByUsername("novak@example.com");
-
-        assertThat(detail.isEnabled()).isFalse();
     }
 
     @Test

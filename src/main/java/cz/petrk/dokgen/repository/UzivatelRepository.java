@@ -11,7 +11,5 @@ public interface UzivatelRepository extends JpaRepository<Uzivatel, Long> {
 
     boolean existsByEmail(String email);
 
-    List<Uzivatel> findByAktivniFalseOrderByVytvorenoDneAsc();
-
-    List<Uzivatel> findByAktivniTrueOrderByVytvorenoDneAsc();
+    List<Uzivatel> findAllByOrderByVytvorenoDneAsc();
 }

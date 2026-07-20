@@ -33,9 +33,8 @@ public class RegistraceService {
     }
 
     /**
-     * Verejna registrace noveho uctu - kazdy ucet ma stejna opravneni jako
-     * kterykoliv jiny, ale nez se poprve prihlasi, musi ho nejdriv nekdo
-     * schvalit na /uzivatele (viz SpravaUctuService, DokgenUserDetailsService).
+     * Verejna registrace noveho uctu - ucet je hned po zalozeni pouzitelny
+     * a ma stejna opravneni jako kterykoliv jiny (viz DokgenUserDetailsService).
      */
     public void zaregistruj(String email, String heslo, String hesloZnovu) {
         if (email == null || email.isBlank()) {
@@ -58,6 +57,6 @@ public class RegistraceService {
             throw new IllegalArgumentException(zprava("chyba.registrace.email_obsazeny", ocistenyEmail));
         }
 
-        uzivatelRepository.save(new Uzivatel(ocistenyEmail, passwordEncoder.encode(heslo), false));
+        uzivatelRepository.save(new Uzivatel(ocistenyEmail, passwordEncoder.encode(heslo)));
     }
 }

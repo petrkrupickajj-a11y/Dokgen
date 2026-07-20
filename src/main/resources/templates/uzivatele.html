@@ -27,42 +27,18 @@
     </nav>
 
     <h1 id="hlavni-obsah" th:text="#{uzivatele.h1}">Uživatelé</h1>
-    <p class="podnadpis" th:text="#{uzivatele.podnadpis}">Nové účty ze stránky Vytvořit účet čekají na schválení, než se s nimi bude dát přihlásit.</p>
+    <p class="podnadpis" th:text="#{uzivatele.podnadpis}">Přehled všech uživatelských účtů - každý má stejná oprávnění jako kterýkoli jiný.</p>
 
     <div class="panel panel-tabulka">
         <div class="chybovy-box" role="alert" th:if="${chyba}" th:text="${chyba}"></div>
 
-        <h2 th:text="#{uzivatele.cekajici.nadpis}">Čekají na schválení</h2>
-        <table th:if="${!cekajici.isEmpty()}">
+        <table th:if="${!ucty.isEmpty()}">
             <tr>
                 <th scope="col" th:text="#{pole.email}">Email</th>
                 <th scope="col" th:text="#{uzivatele.th.vytvoreno}">Vytvořeno</th>
                 <th scope="col" th:text="#{uzivatele.th.akce}">Akce</th>
             </tr>
-            <tr th:each="u : ${cekajici}">
-                <td th:text="${u.email}"></td>
-                <td th:text="${#temporals.format(u.vytvorenoDne, 'dd.MM.yyyy HH:mm')}"></td>
-                <td>
-                    <form th:action="@{/uzivatele/{id}/schvalit(id=${u.id})}" method="post" style="display:inline">
-                        <button type="submit" th:text="#{uzivatele.schvalit}">Schválit</button>
-                    </form>
-                    <form th:action="@{/uzivatele/{id}/zamitnout(id=${u.id})}" method="post" style="display:inline"
-                          th:attr="data-potvrzeni=#{uzivatele.zamitnout.confirm(${u.email})}">
-                        <button type="submit" class="smazat" th:text="#{uzivatele.zamitnout}">Zamítnout</button>
-                    </form>
-                </td>
-            </tr>
-        </table>
-        <p class="prazdno" th:if="${cekajici.isEmpty()}" th:text="#{uzivatele.zadny_cekajici}">Žádné žádosti nečekají na schválení.</p>
-
-        <h2 th:text="#{uzivatele.aktivni.nadpis}">Aktivní účty</h2>
-        <table th:if="${!aktivni.isEmpty()}">
-            <tr>
-                <th scope="col" th:text="#{pole.email}">Email</th>
-                <th scope="col" th:text="#{uzivatele.th.vytvoreno}">Vytvořeno</th>
-                <th scope="col" th:text="#{uzivatele.th.akce}">Akce</th>
-            </tr>
-            <tr th:each="u : ${aktivni}">
+            <tr th:each="u : ${ucty}">
                 <td th:text="${u.email}"></td>
                 <td th:text="${#temporals.format(u.vytvorenoDne, 'dd.MM.yyyy HH:mm')}"></td>
                 <td>
@@ -78,7 +54,7 @@
     <button type="button" class="napoveda-tlacitko" aria-expanded="false" aria-controls="napoveda-panel" th:aria-label="#{spolecne.napoveda.label}">?</button>
     <div id="napoveda-panel" class="napoveda-panel" hidden>
         <h3 th:text="#{spolecne.napoveda.nadpis}">Jak to tady funguje</h3>
-        <p th:text="#{uzivatele.napoveda.text}">Kdokoli se může sám zaregistrovat na stránce Vytvořit účet, ale dokud jeho žádost někdo tady neschválí, přihlásit se nemůže. Zamítnutí žádost rovnou smaže.</p>
+        <p th:text="#{uzivatele.napoveda.text}">Kdokoli se může sám zaregistrovat na stránce Vytvořit účet a rovnou se přihlásit. Odsud jde smazat účet libovolného uživatele kromě sebe sama.</p>
         <button type="button" class="zavrit" th:text="#{spolecne.zavrit}">Zavřít</button>
     </div>
     <script th:src="@{/napoveda.js}"></script>

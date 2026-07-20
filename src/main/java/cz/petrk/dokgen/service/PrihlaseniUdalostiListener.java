@@ -1,7 +1,6 @@
 package cz.petrk.dokgen.service;
 
 import org.springframework.context.event.EventListener;
-import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.authentication.LockedException;
 import org.springframework.security.authentication.event.AbstractAuthenticationFailureEvent;
 import org.springframework.security.authentication.event.AuthenticationSuccessEvent;
@@ -23,10 +22,10 @@ public class PrihlaseniUdalostiListener {
 
     @EventListener
     public void naNeuspesnePrihlaseni(AbstractAuthenticationFailureEvent udalost) {
-        // Ucet uz je zamceny, nebo jeste ceka na schvaleni - LockedException/DisabledException
-        // se hazi driv, nez se vubec zkousi heslo, takze tohle by nemel byt skutecny dalsi
-        // pokus a nema smysl zamceni prodluzovat.
-        if (udalost.getException() instanceof LockedException || udalost.getException() instanceof DisabledException) {
+        // Ucet uz je zamceny - LockedException se hazi driv, nez se vubec zkousi
+        // heslo, takze tohle by nemel byt skutecny dalsi pokus a nema smysl
+        // zamceni prodluzovat.
+        if (udalost.getException() instanceof LockedException) {
             return;
         }
         prihlaseniOmezovac.zaznamenejNeuspech(udalost.getAuthentication().getName());

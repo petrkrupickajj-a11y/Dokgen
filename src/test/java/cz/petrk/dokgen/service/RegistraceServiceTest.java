@@ -60,18 +60,6 @@ class RegistraceServiceTest {
     }
 
     @Test
-    void zaregistrujNovyUcetNeniAktivniDokudHoNekdoNeschvali() {
-        given(uzivatelRepository.existsByEmail("novak@example.com")).willReturn(false);
-        given(passwordEncoder.encode(any())).willReturn("hash");
-
-        service.zaregistruj("novak@example.com", "tajneheslo123", "tajneheslo123");
-
-        ArgumentCaptor<Uzivatel> zachyceny = ArgumentCaptor.forClass(Uzivatel.class);
-        verify(uzivatelRepository).save(zachyceny.capture());
-        assertThat(zachyceny.getValue().jeAktivni()).isFalse();
-    }
-
-    @Test
     void zaregistrujOriznePrebytecneMezeryVEmailu() {
         given(uzivatelRepository.existsByEmail("novak@example.com")).willReturn(false);
         given(passwordEncoder.encode(any())).willReturn("hash");

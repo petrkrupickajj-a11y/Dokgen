@@ -44,73 +44,11 @@ class SpravaUctuServiceTest {
     }
 
     @Test
-    void getCekajiciUctyVraciNeaktivniUctySeRazenim() {
-        List<Uzivatel> cekajici = List.of(new Uzivatel("novak@example.com", "hash", false));
-        given(uzivatelRepository.findByAktivniFalseOrderByVytvorenoDneAsc()).willReturn(cekajici);
+    void getUctyVraciVsechnyUctySeRazenim() {
+        List<Uzivatel> ucty = List.of(new Uzivatel("admin@dokgen.local", "hash"), new Uzivatel("novak@example.com", "hash"));
+        given(uzivatelRepository.findAllByOrderByVytvorenoDneAsc()).willReturn(ucty);
 
-        assertThat(service.getCekajiciUcty()).isEqualTo(cekajici);
-    }
-
-    @Test
-    void getAktivniUctyVraciAktivniUctySeRazenim() {
-        List<Uzivatel> aktivni = List.of(new Uzivatel("admin@dokgen.local", "hash"));
-        given(uzivatelRepository.findByAktivniTrueOrderByVytvorenoDneAsc()).willReturn(aktivni);
-
-        assertThat(service.getAktivniUcty()).isEqualTo(aktivni);
-    }
-
-    @Test
-    void schvalNastaviAktivniNaTrue() {
-        Uzivatel cekajici = new Uzivatel("novak@example.com", "hash", false);
-        given(uzivatelRepository.findById(1L)).willReturn(Optional.of(cekajici));
-
-        service.schval(1L);
-
-        assertThat(cekajici.jeAktivni()).isTrue();
-        verify(uzivatelRepository).save(cekajici);
-    }
-
-    @Test
-    void schvalNeexistujicihoUctuVyhodiChybu() {
-        given(uzivatelRepository.findById(1L)).willReturn(Optional.empty());
-
-        assertThatThrownBy(() -> service.schval(1L))
-                .isInstanceOf(IllegalArgumentException.class);
-
-        verify(uzivatelRepository, never()).save(org.mockito.ArgumentMatchers.any());
-    }
-
-    @Test
-    void schvalJizAktivnihoUctuVyhodiChybu() {
-        Uzivatel jizAktivni = new Uzivatel("admin@dokgen.local", "hash");
-        given(uzivatelRepository.findById(1L)).willReturn(Optional.of(jizAktivni));
-
-        assertThatThrownBy(() -> service.schval(1L))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("aktivní");
-
-        verify(uzivatelRepository, never()).save(org.mockito.ArgumentMatchers.any());
-    }
-
-    @Test
-    void zamitniSmazeCekajiciUcet() {
-        Uzivatel cekajici = new Uzivatel("novak@example.com", "hash", false);
-        given(uzivatelRepository.findById(1L)).willReturn(Optional.of(cekajici));
-
-        service.zamitni(1L);
-
-        verify(uzivatelRepository).delete(cekajici);
-    }
-
-    @Test
-    void zamitniJizAktivnihoUctuVyhodiChybuANesmazeHo() {
-        Uzivatel jizAktivni = new Uzivatel("admin@dokgen.local", "hash");
-        given(uzivatelRepository.findById(1L)).willReturn(Optional.of(jizAktivni));
-
-        assertThatThrownBy(() -> service.zamitni(1L))
-                .isInstanceOf(IllegalArgumentException.class);
-
-        verify(uzivatelRepository, never()).delete(org.mockito.ArgumentMatchers.any());
+        assertThat(service.getUcty()).isEqualTo(ucty);
     }
 
     @Test

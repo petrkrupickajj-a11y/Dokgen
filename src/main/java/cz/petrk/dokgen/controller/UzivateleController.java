@@ -20,30 +20,9 @@ public class UzivateleController {
 
     @GetMapping("/uzivatele")
     public String seznam(Authentication authentication, Model model) {
-        model.addAttribute("cekajici", spravaUctuService.getCekajiciUcty());
-        model.addAttribute("aktivni", spravaUctuService.getAktivniUcty());
+        model.addAttribute("ucty", spravaUctuService.getUcty());
         model.addAttribute("aktualniEmail", authentication.getName());
         return "uzivatele";
-    }
-
-    @PostMapping("/uzivatele/{id}/schvalit")
-    public String schvalit(@PathVariable Long id, RedirectAttributes redirectAttributes) {
-        try {
-            spravaUctuService.schval(id);
-        } catch (IllegalArgumentException e) {
-            redirectAttributes.addFlashAttribute("chyba", e.getMessage());
-        }
-        return "redirect:/uzivatele";
-    }
-
-    @PostMapping("/uzivatele/{id}/zamitnout")
-    public String zamitnout(@PathVariable Long id, RedirectAttributes redirectAttributes) {
-        try {
-            spravaUctuService.zamitni(id);
-        } catch (IllegalArgumentException e) {
-            redirectAttributes.addFlashAttribute("chyba", e.getMessage());
-        }
-        return "redirect:/uzivatele";
     }
 
     @PostMapping("/uzivatele/{id}/smazat")

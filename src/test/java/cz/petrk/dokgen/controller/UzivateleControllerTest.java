@@ -34,46 +34,15 @@ class UzivateleControllerTest {
     private SpravaUctuService spravaUctuService;
 
     @Test
-    void seznamZobraziCekajiciIAktivniUcty() throws Exception {
-        List<Uzivatel> cekajici = List.of(new Uzivatel("novak@example.com", "hash", false));
-        List<Uzivatel> aktivni = List.of(new Uzivatel("admin@dokgen.local", "hash"));
-        given(spravaUctuService.getCekajiciUcty()).willReturn(cekajici);
-        given(spravaUctuService.getAktivniUcty()).willReturn(aktivni);
+    void seznamZobraziVsechnyUcty() throws Exception {
+        List<Uzivatel> ucty = List.of(new Uzivatel("admin@dokgen.local", "hash"), new Uzivatel("novak@example.com", "hash"));
+        given(spravaUctuService.getUcty()).willReturn(ucty);
 
         mockMvc.perform(get("/uzivatele"))
                 .andExpect(status().isOk())
                 .andExpect(view().name("uzivatele"))
-                .andExpect(model().attribute("cekajici", cekajici))
-                .andExpect(model().attribute("aktivni", aktivni))
+                .andExpect(model().attribute("ucty", ucty))
                 .andExpect(model().attribute("aktualniEmail", "admin@dokgen.local"));
-    }
-
-    @Test
-    void schvalitPresmerujeZpetNaSeznam() throws Exception {
-        mockMvc.perform(post("/uzivatele/{id}/schvalit", 1L).with(csrf()))
-                .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/uzivatele"));
-
-        verify(spravaUctuService).schval(1L);
-    }
-
-    @Test
-    void schvalitSChybouJiVratiVeFlashAtributu() throws Exception {
-        willThrow(new IllegalArgumentException("Uživatel neexistuje.")).given(spravaUctuService).schval(1L);
-
-        mockMvc.perform(post("/uzivatele/{id}/schvalit", 1L).with(csrf()))
-                .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/uzivatele"))
-                .andExpect(flash().attribute("chyba", "Uživatel neexistuje."));
-    }
-
-    @Test
-    void zamitnoutPresmerujeZpetNaSeznam() throws Exception {
-        mockMvc.perform(post("/uzivatele/{id}/zamitnout", 1L).with(csrf()))
-                .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/uzivatele"));
-
-        verify(spravaUctuService).zamitni(1L);
     }
 
     @Test

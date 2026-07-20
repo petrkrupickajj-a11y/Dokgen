@@ -13,9 +13,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 
 /**
- * Schvalovani novych uctu z verejne registrace (viz Uzivatel.aktivni,
- * RegistraceService) a sprava existujicich uctu - stranka /uzivatele
- * (UzivateleController) odsud bere seznamy i akce Schvalit/Zamitnout/Smazat.
+ * Sprava existujicich uctu - stranka /uzivatele (UzivateleController) odsud
+ * bere seznam uctu i akci Smazat.
  */
 @Service
 public class SpravaUctuService {
@@ -35,25 +34,8 @@ public class SpravaUctuService {
         return zpravy.getMessage(kod, args, LocaleContextHolder.getLocale());
     }
 
-    public List<Uzivatel> getCekajiciUcty() {
-        return uzivatelRepository.findByAktivniFalseOrderByVytvorenoDneAsc();
-    }
-
-    public List<Uzivatel> getAktivniUcty() {
-        return uzivatelRepository.findByAktivniTrueOrderByVytvorenoDneAsc();
-    }
-
-    /** Schvali cekajici ucet, aby se od ted mohl prihlasit. */
-    public void schval(Long id) {
-        Uzivatel uzivatel = najdiCekajici(id);
-        uzivatel.setAktivni(true);
-        uzivatelRepository.save(uzivatel);
-    }
-
-    /** Zamitnuti cekajici zadosti o ucet ucet rovnou smaze - nikdy nebyl aktivni, neni co zachovavat. */
-    public void zamitni(Long id) {
-        Uzivatel uzivatel = najdiCekajici(id);
-        uzivatelRepository.delete(uzivatel);
+    public List<Uzivatel> getUcty() {
+        return uzivatelRepository.findAllByOrderByVytvorenoDneAsc();
     }
 
     /**
@@ -75,13 +57,5 @@ public class SpravaUctuService {
 
         resetHeslaRepository.deleteByUzivatel(uzivatel);
         uzivatelRepository.delete(uzivatel);
-    }
-
-    private Uzivatel najdiCekajici(Long id) {
-        Uzivatel uzivatel = Vyhledani.najdiNeboVyhod(uzivatelRepository.findById(id), zprava("chyba.uzivatele.neexistuje"));
-        if (uzivatel.jeAktivni()) {
-            throw new IllegalArgumentException(zprava("chyba.uzivatele.jiz_aktivni"));
-        }
-        return uzivatel;
     }
 }

@@ -257,8 +257,8 @@ případů nevadí.
   `/zapomenute-heslo` a `/nove-heslo`. Uživatelé se ukládají v databázi
   (entita `Uzivatel`), přihlašovacím identifikátorem je **email** (appka ho
   vždy ukládá i porovnává v malých písmenech, bez okolních mezer), heslo jako
-  BCrypt hash. Appka nerozlišuje role - každý aktivní účet má úplně stejná
-  oprávnění, včetně správy šablon (`/sablony/**`) a schvalování dalších účtů.
+  BCrypt hash. Appka nerozlišuje role - každý účet má od založení úplně
+  stejná oprávnění, včetně správy šablon (`/sablony/**`).
   - **Výchozí účty** se při prvním startu nahrají z `application.properties`
     (`dokgen.uzivatele`): `admin@dokgen.local` a `asistentka@dokgen.local`
     (jen jako výchozí příklad, obě mají stejná oprávnění) a jsou rovnou
@@ -270,16 +270,13 @@ případů nevadí.
     známým/uhodnutelným výchozím heslem. Po prvním startu appka bere účty
     výhradně z databáze - úprava properties později už nic nepřepíše.
   - **Registrace nového účtu** (`/registrace`) je veřejná - kdokoli si může
-    sám založit účet (email, heslo 2×/min. 8, max. 72 znaků), ale nový účet
-    **čeká na schválení** (`aktivni = false`) a přihlášení mu appka odmítne
-    se srozumitelnou zprávou, dokud ho někdo aktivní neschválí. Stránka
-    `/uzivatele` (dostupná každému přihlášenému přes odkaz v navigaci) ukazuje
-    čekající žádosti se dvěma akcemi - **Schválit** (účet může od teď
-    přihlásit) a **Zamítnout** (účet se smaže) - a pod nimi seznam aktivních
-    účtů, odkud jde účet i smazat (kromě toho, pod kterým jsi zrovna
-    přihlášený - appka se tak nemůže sama zamknout ven). Proti hromadnému
-    zakládání účtů appka navíc limituje počet registrací z jedné IP adresy
-    (`IpOmezovac`, 5 za 15 minut).
+    sám založit účet (email, heslo 2×/min. 8, max. 72 znaků) a rovnou se s
+    ním přihlásit, žádné schvalování ani čekání. Stránka `/uzivatele`
+    (dostupná každému přihlášenému přes odkaz v navigaci) ukazuje seznam
+    všech účtů, odkud jde libovolný z nich smazat (kromě toho, pod kterým jsi
+    zrovna přihlášený - appka se tak nemůže sama zamknout ven). Proti
+    hromadnému zakládání účtů appka navíc limituje počet registrací z jedné
+    IP adresy (`IpOmezovac`, 5 za 15 minut).
   - **Vlastní účet** (`/nastaveni`) - změna přihlašovacího emailu (vyžaduje
     současné heslo, po změně appka odhlásí a nechá přihlásit se znovu pod
     novým emailem, viz `MojeEmailService`) a odkaz na změnu hesla

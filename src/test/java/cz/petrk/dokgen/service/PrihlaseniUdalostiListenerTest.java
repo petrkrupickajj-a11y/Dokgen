@@ -3,11 +3,9 @@ package cz.petrk.dokgen.service;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.security.authentication.BadCredentialsException;
-import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.authentication.LockedException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.authentication.event.AuthenticationFailureBadCredentialsEvent;
-import org.springframework.security.authentication.event.AuthenticationFailureDisabledEvent;
 import org.springframework.security.authentication.event.AuthenticationFailureLockedEvent;
 import org.springframework.security.authentication.event.AuthenticationSuccessEvent;
 
@@ -42,16 +40,6 @@ class PrihlaseniUdalostiListenerTest {
     void neuspechNaJizZamcenemUctuSeNezaznamenaAbySeZamceniNeprodluzovalo() {
         var autentizace = new UsernamePasswordAuthenticationToken("novak", "cokoliv");
         var udalost = new AuthenticationFailureLockedEvent(autentizace, new LockedException("Účet je zamčený"));
-
-        listener.naNeuspesnePrihlaseni(udalost);
-
-        verify(prihlaseniOmezovac, never()).zaznamenejNeuspech(any());
-    }
-
-    @Test
-    void neuspechNaNeschvalenemUctuSeNezaznamena() {
-        var autentizace = new UsernamePasswordAuthenticationToken("novak", "cokoliv");
-        var udalost = new AuthenticationFailureDisabledEvent(autentizace, new DisabledException("Účet čeká na schválení"));
 
         listener.naNeuspesnePrihlaseni(udalost);
 

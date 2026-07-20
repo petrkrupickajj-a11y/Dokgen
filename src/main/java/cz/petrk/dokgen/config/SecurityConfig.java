@@ -4,7 +4,6 @@ import cz.petrk.dokgen.service.IpOmezovac;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.crypto.factory.PasswordEncoderFactories;
@@ -12,7 +11,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.security.web.access.AccessDeniedHandlerImpl;
-import org.springframework.security.web.authentication.AuthenticationFailureHandler;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 import java.time.Clock;
@@ -25,10 +23,9 @@ import java.time.Clock;
  * nize) - prihlasovaci ucty se ctou z databaze (entita Uzivatel, viz
  * DokgenUserDetailsService), jednak vestavene z application.properties
  * (UzivateleSeeder je pri prvnim startu naplni do DB), jednak nove pridane
- * pres verejnou /registrace. Kazdy prihlaseny ucet ma stejna opravneni -
- * zadne role se nerozlisuji. Ucet z verejne registrace ale musi nejdriv
- * nekdo schvalit na /uzivatele (viz Uzivatel.aktivni, SpravaUctuService) -
- * do te doby appka prihlaseni odmitne (viz authenticationFailureHandler nize).
+ * pres verejnou /registrace. Kazdy prihlaseny ucet ma od zalozeni stejna
+ * opravneni jako kterykoliv jiny - zadne role ani schvalovaci proces se
+ * nerozlisuji.
  *
  * CSRF ochrana zustava zapnuta (Spring Security default) - Thymeleaf do
  * kazdeho formulare s th:action automaticky vlozi skryte CSRF pole, takze
@@ -57,20 +54,6 @@ public class SecurityConfig {
         AccessDeniedHandlerImpl handler = new AccessDeniedHandlerImpl();
         handler.setErrorPage("/pristup-odepren");
         return handler;
-    }
-
-    /**
-     * Neschvaleny ucet (viz Uzivatel.aktivni, DokgenUserDetailsService) dostane
-     * DisabledException jeste pred kontrolou hesla - misto obecne "spatny email
-     * nebo heslo" ho presmerujeme na hlasku, ze ucet ceka na schvaleni, at vi,
-     * ze ma proste pockat, ne ze si spatne pamatuje heslo.
-     */
-    @Bean
-    public AuthenticationFailureHandler authenticationFailureHandler() {
-        return (request, response, exception) -> {
-            String cil = exception instanceof DisabledException ? "/login?cekaNaSchvaleni" : "/login?error";
-            response.sendRedirect(request.getContextPath() + cil);
-        };
     }
 
     // Appka nacita font (Google Fonts) a ma par mistnich inline <script>/style="" -
@@ -117,7 +100,7 @@ public class SecurityConfig {
                         .loginPage("/login")
                         .usernameParameter("email")
                         .defaultSuccessUrl("/", true)
-                        .failureHandler(authenticationFailureHandler())
+                        .failureUrl("/login?error")
                         .permitAll())
                 .logout(logout -> logout
                         .logoutSuccessUrl("/login?odhlaseno")
