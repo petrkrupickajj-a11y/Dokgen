@@ -84,7 +84,7 @@ public class PolozkyVypocetService {
     }
 
     // Vychozi DecimalFormatSymbols pro cs-CZ v aktualnim JDK pouziva jako oddelovac
-    // tisicu tvrdou mezeru (  - CLDR data), ne bezny mezerovy znak - vysledek
+    // tisicu tvrdou mezeru U+00A0 (CLDR data), ne bezny mezerovy znak - vysledek
     // by tak vypadal jako "1 234,50", ale kopie do textoveho pole/testu by
     // porovnavala jiny znak, nez vidi clovek. Nahrazujeme ho bezni mezerou, aby
     // format presne odpovidal pozadovanemu "1 234,50" ze zadani.

@@ -61,6 +61,14 @@ import java.util.stream.Collectors;
 @Service
 public class DocumentGeneratorService {
 
+    /**
+     * Konvence opakovani radku tabulky: radek, jehoz text obsahuje placeholder
+     * s timhle prefixem, je "sablonovy" - misto nej se vlozi jedna kopie za
+     * kazdou polozku ze seznamu. Zamerne obecne (funguje pro libovolnou sablonu
+     * s touhle konvenci, ne jen pro fakturu) - viz zpracujTabulku.
+     */
+    private static final String PREFIX_POLOZKA = "${polozka.";
+
     private final SablonaRepository sablonaRepository;
     private final SablonaUlozisteService uloziste;
     private final SmazanaVestavenaSablonaRepository smazaneVestaveneRepository;
@@ -129,7 +137,7 @@ public class DocumentGeneratorService {
     }
 
     /**
-     * Zjisti, jestli sablona pouziva konvenci opakovani radku (obsahuje niekde
+     * Zjisti, jestli sablona pouziva konvenci opakovani radku (obsahuje nekde
      * sablonovy radek s ${polozka.) - pro /generovat/{id}, kde formular
      * zobrazuje sekci s polozkami jen u takovych sablon.
      *
@@ -334,14 +342,6 @@ public class DocumentGeneratorService {
     private String holyNazevPlaceholderu(String placeholderSObalkou) {
         return placeholderSObalkou.substring(2, placeholderSObalkou.length() - 1);
     }
-
-    /**
-     * Konvence opakovani radku tabulky: radek, jehoz text obsahuje placeholder
-     * s timhle prefixem, je "sablonovy" - misto nej se vlozi jedna kopie za
-     * kazdou polozku ze seznamu. Zamerne obecne (funguje pro libovolnou sablonu
-     * s touhle konvenci, ne jen pro fakturu) - viz zpracujTabulku.
-     */
-    private static final String PREFIX_POLOZKA = "${polozka.";
 
     /** Projde vsechny tabulky "tela" dokumentu (vcetne vnorenych) a v kazde zpracuje pripadny sablonovy radek. */
     private void zpracujTabulkyPolozek(IBody telo, List<Map<String, String>> polozky) {
