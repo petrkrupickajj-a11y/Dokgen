@@ -46,6 +46,14 @@ public class EmailNormalizaceRunner implements ApplicationRunner {
                 .collect(Collectors.groupingBy(u -> EmailValidace.normalizuj(u.getEmail())));
 
         for (Uzivatel uzivatel : vsichni) {
+            // Ucty bez emailu (stare ucty prihlasovane uzivatelskym jmenem) resi
+            // EmailZeStarehoJmenaRunner - tady je jen preskocime, jinak by jim
+            // normalizace null nastavila prazdny email a nenavratne tak zahodila
+            // jedinou stopu, podle ktere sly jeste priradit ke skutecnemu cloveku.
+            if (uzivatel.getEmail() == null || uzivatel.getEmail().isBlank()) {
+                continue;
+            }
+
             String normalizovany = EmailValidace.normalizuj(uzivatel.getEmail());
             if (normalizovany.equals(uzivatel.getEmail())) {
                 continue;

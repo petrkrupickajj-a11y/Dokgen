@@ -59,4 +59,15 @@ class EmailNormalizaceRunnerTest {
         assertThat(malyma.getEmail()).isEqualTo("novak@example.com");
         verify(uzivatelRepository, never()).save(any());
     }
+
+    @Test
+    void ucetBezEmailuSeNechaBezeZmenyProEmailZeStarehoJmenaRunner() {
+        Uzivatel starySUzivatelskymJmenem = new Uzivatel(null, "hash");
+        given(uzivatelRepository.findAll()).willReturn(List.of(starySUzivatelskymJmenem));
+
+        runner.run(new DefaultApplicationArguments());
+
+        assertThat(starySUzivatelskymJmenem.getEmail()).isNull();
+        verify(uzivatelRepository, never()).save(any());
+    }
 }
