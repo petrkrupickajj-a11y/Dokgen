@@ -9,6 +9,7 @@ import cz.petrk.dokgen.service.HistorieService;
 import cz.petrk.dokgen.service.PdfExportService;
 import cz.petrk.dokgen.service.VygenerovanyDokumentUlozisteService;
 import cz.petrk.dokgen.service.VysledekGenerovani;
+import cz.petrk.dokgen.util.KlientData;
 import cz.petrk.dokgen.util.NazevSouboru;
 import cz.petrk.dokgen.util.Vyhledani;
 import cz.petrk.dokgen.web.NeplatnyVstupException;
@@ -33,8 +34,12 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.LinkedHashMap;
 import java.util.Locale;
+import java.util.Map;
 
 @Controller
 public class KlientController {
@@ -42,6 +47,8 @@ public class KlientController {
     // Stejna velikost stranky jako HistorieService.VELIKOST_STRANKY - zadny
     // specialni duvod pro jinou hodnotu, jen konzistence napric appkou.
     private static final int VELIKOST_STRANKY = 20;
+
+    private static final DateTimeFormatter FORMAT_DATA = DateTimeFormatter.ofPattern("dd.MM.yyyy");
 
     private final KlientRepository klientRepository;
     private final DocumentGeneratorService documentGeneratorService;
@@ -66,6 +73,14 @@ public class KlientController {
 
     private String zprava(String kod, Object... args) {
         return zpravy.getMessage(kod, args, LocaleContextHolder.getLocale());
+    }
+
+    // Datum vygenerovani patri do kontextu kazdeho dokumentu (${datum} pouzivaji
+    // vsechny vestavene sablony), bez ohledu na to, jestli sablona ma i polozky.
+    private Map<String, String> sestavKontext(Klient klient) {
+        Map<String, String> kontext = new LinkedHashMap<>(KlientData.sestavKontext(klient));
+        kontext.put("datum", LocalDate.now().format(FORMAT_DATA));
+        return kontext;
     }
 
     // Uvodni stranka - seznam klientu, volitelne zuzeny hledanim (jmeno,
@@ -160,7 +175,7 @@ public class KlientController {
         VysledekGenerovani vysledek;
         try {
             klient = Vyhledani.najdiNeboVyhod(klientRepository.findById(id), zprava("chyba.klient.neexistuje", id));
-            vysledek = documentGeneratorService.vygenerujDokument(klient, sablonaId);
+            vysledek = documentGeneratorService.vygenerujDokument(sablonaId, sestavKontext(klient), List.of());
         } catch (IllegalArgumentException e) {
             redirectAttributes.addFlashAttribute("chybaGenerovani", e.getMessage());
             return "redirect:/generovat/" + id;
@@ -217,7 +232,7 @@ public class KlientController {
                                                    @RequestParam Long sablonaId) throws IOException {
         Klient klient = Vyhledani.najdiNeboVyhod(klientRepository.findById(id), zprava("chyba.klient.neexistuje", id));
 
-        VysledekGenerovani vysledek = documentGeneratorService.vygenerujDokument(klient, sablonaId);
+        VysledekGenerovani vysledek = documentGeneratorService.vygenerujDokument(sablonaId, sestavKontext(klient), List.of());
         byte[] pdf = pdfExportService.prevedNaPdf(vysledek.obsah());
 
         String nazevSouboru = NazevSouboru.ocisti(vysledek.sablona().getNazev()) + ".pdf";

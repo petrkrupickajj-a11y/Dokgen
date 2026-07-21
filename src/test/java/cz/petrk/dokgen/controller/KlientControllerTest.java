@@ -20,6 +20,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import static org.hamcrest.Matchers.containsString;
@@ -277,7 +278,7 @@ class KlientControllerTest {
         given(klientRepository.findById(1L)).willReturn(Optional.of(klient));
         Sablona sablona = new Sablona("Smlouva", "smlouva.docx", true);
         byte[] obsah = "obsah dokumentu".getBytes();
-        given(documentGeneratorService.vygenerujDokument(any(Klient.class), eq(1L)))
+        given(documentGeneratorService.vygenerujDokument(eq(1L), any(Map.class), any(List.class)))
                 .willReturn(new VysledekGenerovani(obsah, sablona));
         VygenerovanyDokument zaznam = new VygenerovanyDokument(1L, "Jan Novák", "Smlouva", "WORD");
         ReflectionTestUtils.setField(zaznam, "id", 42L);
@@ -301,7 +302,7 @@ class KlientControllerTest {
         Sablona sablona = new Sablona("Smlouva", "smlouva.docx", true);
         byte[] wordObsah = "word".getBytes();
         byte[] pdfObsah = "pdf".getBytes();
-        given(documentGeneratorService.vygenerujDokument(any(Klient.class), eq(1L)))
+        given(documentGeneratorService.vygenerujDokument(eq(1L), any(Map.class), any(List.class)))
                 .willReturn(new VysledekGenerovani(wordObsah, sablona));
         given(pdfExportService.prevedNaPdf(wordObsah)).willReturn(pdfObsah);
         VygenerovanyDokument zaznam = new VygenerovanyDokument(1L, "Jan Novák", "Smlouva", "PDF");
@@ -339,14 +340,14 @@ class KlientControllerTest {
                 .andExpect(status().isBadRequest())
                 .andExpect(view().name("chyba"));
 
-        verify(documentGeneratorService, never()).vygenerujDokument(any(), any());
+        verify(documentGeneratorService, never()).vygenerujDokument(any(), any(), any());
     }
 
     @Test
     void generujDokumentSNeznamouSablonouSePresmerujeZpetSHlaskou() throws Exception {
         Klient klient = vzorovyKlient(1L);
         given(klientRepository.findById(1L)).willReturn(Optional.of(klient));
-        given(documentGeneratorService.vygenerujDokument(any(Klient.class), eq(999L)))
+        given(documentGeneratorService.vygenerujDokument(eq(999L), any(Map.class), any(List.class)))
                 .willThrow(new IllegalArgumentException("Neznámá šablona (id 999)"));
 
         mockMvc.perform(post("/generovat/1").with(csrf())
@@ -364,7 +365,7 @@ class KlientControllerTest {
         Sablona sablona = new Sablona("Smlouva", "smlouva.docx", true);
         byte[] wordObsah = "word".getBytes();
         byte[] pdfObsah = "pdf".getBytes();
-        given(documentGeneratorService.vygenerujDokument(any(Klient.class), eq(1L)))
+        given(documentGeneratorService.vygenerujDokument(eq(1L), any(Map.class), any(List.class)))
                 .willReturn(new VysledekGenerovani(wordObsah, sablona));
         given(pdfExportService.prevedNaPdf(wordObsah)).willReturn(pdfObsah);
 
@@ -391,7 +392,7 @@ class KlientControllerTest {
     void nahledDokumentuSNeznamouSablonouVratiChybovouStranku() throws Exception {
         Klient klient = vzorovyKlient(1L);
         given(klientRepository.findById(1L)).willReturn(Optional.of(klient));
-        given(documentGeneratorService.vygenerujDokument(any(Klient.class), eq(999L)))
+        given(documentGeneratorService.vygenerujDokument(eq(999L), any(Map.class), any(List.class)))
                 .willThrow(new IllegalArgumentException("Neznámá šablona (id 999)"));
 
         mockMvc.perform(get("/generovat/1/nahled").param("sablonaId", "999"))

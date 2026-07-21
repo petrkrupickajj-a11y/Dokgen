@@ -1,6 +1,5 @@
 package cz.petrk.dokgen.service;
 
-import cz.petrk.dokgen.entity.Klient;
 import cz.petrk.dokgen.entity.Sablona;
 import cz.petrk.dokgen.entity.SablonaVerze;
 import cz.petrk.dokgen.entity.SmazanaVestavenaSablona;
@@ -26,9 +25,6 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -47,9 +43,14 @@ import java.util.stream.Collectors;
  *  2. Projdeme vsechny odstavce v tele, zahlavi i zapati dokumentu, vcetne
  *     bunek tabulek (i vnorenych) - viz nahradVTele - a hledame placeholdery
  *     typu ${jmeno}, ${prijmeni} atd.
- *  3. Kde placeholder najdeme, nahradime ho skutecnou hodnotou z databaze.
+ *  3. Kde placeholder najdeme, nahradime ho skutecnou hodnotou z dodaneho kontextu.
  *  4. Vratime vysledny .docx jako pole bajtu -> to pak posleme uzivateli
  *     ke stazeni v controlleru.
+ *
+ * Generator zamerne nezna zadnou domenovou entitu (Klient, faktura...) - dostava
+ * hotovou Map<String,String> s hodnotami placeholderu. Prevod domenovych dat
+ * na tuhle obecnou podobu je vec volajiciho (napr. KlientController pouziva
+ * KlientData.sestavKontext).
  *
  * PRIDANI NOVE SABLONY se dnes dela primo v appce na strance /sablony
  * (nahranim .docx souboru s placeholdery ${jmeno}, ${prijmeni}, ${telefon},
@@ -57,8 +58,6 @@ import java.util.stream.Collectors;
  */
 @Service
 public class DocumentGeneratorService {
-
-    private static final DateTimeFormatter FORMAT_DATA = DateTimeFormatter.ofPattern("dd.MM.yyyy");
 
     private final SablonaRepository sablonaRepository;
     private final SablonaUlozisteService uloziste;
@@ -86,25 +85,25 @@ public class DocumentGeneratorService {
         return sablonaRepository.findAll(Sort.by("nazev"));
     }
 
-    public VysledekGenerovani vygenerujDokument(Klient klient, Long sablonaId) throws IOException {
+    public VysledekGenerovani vygenerujDokument(Long sablonaId, Map<String, String> kontext,
+                                                 List<Map<String, String>> polozky) throws IOException {
         Sablona sablona = Vyhledani.najdiNeboVyhod(sablonaRepository.findById(sablonaId), zprava("chyba.sablona.neznama", sablonaId));
 
-        Map<String, String> data = sestavData(klient);
-        Pattern vzorPlaceholderu = sestavVzorPlaceholderu(data.keySet());
+        Pattern vzorPlaceholderu = sestavVzorPlaceholderu(kontext.keySet());
 
         try (ByteArrayInputStream vstup = new ByteArrayInputStream(uloziste.nacti(sablona.getNazevSouboru()));
              XWPFDocument dokument = new XWPFDocument(vstup);
              ByteArrayOutputStream vystup = new ByteArrayOutputStream()) {
 
             // Telo dokumentu (odstavce i tabulky vcetne vnorenych - viz nahradVTele)
-            nahradVTele(dokument, data, vzorPlaceholderu);
+            nahradVTele(dokument, kontext, vzorPlaceholderu);
 
             // Zahlavi a zapati - dokument jich muze mit vic (pro prvni/lichou/sudou stranku)
             for (XWPFHeader zahlavi : dokument.getHeaderList()) {
-                nahradVTele(zahlavi, data, vzorPlaceholderu);
+                nahradVTele(zahlavi, kontext, vzorPlaceholderu);
             }
             for (XWPFFooter zapati : dokument.getFooterList()) {
-                nahradVTele(zapati, data, vzorPlaceholderu);
+                nahradVTele(zapati, kontext, vzorPlaceholderu);
             }
 
             dokument.write(vystup);
@@ -276,29 +275,17 @@ public class DocumentGeneratorService {
         return zprava != null && zprava.toLowerCase(Locale.ROOT).contains("zip bomb");
     }
 
-    private Map<String, String> sestavData(Klient klient) {
-        Map<String, String> data = new LinkedHashMap<>();
-        data.put("${jmeno}", nullSafe(klient.getJmeno()));
-        data.put("${prijmeni}", nullSafe(klient.getPrijmeni()));
-        data.put("${telefon}", nullSafe(klient.getTelefon()));
-        data.put("${email}", nullSafe(klient.getEmail()));
-        data.put("${adresa}", nullSafe(klient.getAdresa()));
-        data.put("${mesto}", nullSafe(klient.getMesto()));
-        data.put("${psc}", nullSafe(klient.getPsc()));
-        data.put("${ico}", nullSafe(klient.getIco()));
-        data.put("${poznamka}", nullSafe(klient.getPoznamka()));
-        data.put("${datum}", LocalDate.now().format(FORMAT_DATA));
-        return data;
-    }
-
-    private String nullSafe(String hodnota) {
-        return hodnota == null ? "" : hodnota;
-    }
-
-    /** Sestavi regex, ktery na jeden zaber najde kterykoliv ze znamych placeholderu (${jmeno}, ${prijmeni}...). */
-    private Pattern sestavVzorPlaceholderu(Set<String> placeholdery) {
-        String alternativy = placeholdery.stream().map(Pattern::quote).collect(Collectors.joining("|"));
+    /** Sestavi regex, ktery na jeden zaber najde kterykoliv z placeholderu odpovidajicich klicum kontextu (${jmeno}, ${prijmeni}...). */
+    private Pattern sestavVzorPlaceholderu(Set<String> nazvyPlaceholderu) {
+        String alternativy = nazvyPlaceholderu.stream()
+                .map(nazev -> Pattern.quote("${" + nazev + "}"))
+                .collect(Collectors.joining("|"));
         return Pattern.compile(alternativy);
+    }
+
+    /** Odstrani obalku "${" a "}" z nalezeneho placeholderu, aby slo hodnotu dohledat v kontextu podle holeho nazvu. */
+    private String holyNazevPlaceholderu(String placeholderSObalkou) {
+        return placeholderSObalkou.substring(2, placeholderSObalkou.length() - 1);
     }
 
     /**
@@ -354,7 +341,7 @@ public class DocumentGeneratorService {
         // retezec, ve kterem "$" a "\" maji specialni vyznam (odkaz na skupinu) - kdyby
         // hodnota pole klienta (napr. poznamka) nahodou obsahovala "$", je potreba ji
         // pred pouzitim jako nahrady oquotovat, jinak by appendReplacement() spadl.
-        String novyText = shoda.replaceAll(vysledek -> Matcher.quoteReplacement(data.get(vysledek.group())));
+        String novyText = shoda.replaceAll(vysledek -> Matcher.quoteReplacement(data.get(holyNazevPlaceholderu(vysledek.group()))));
 
         List<XWPFRun> runy = odstavec.getRuns();
         if (runy.isEmpty()) {

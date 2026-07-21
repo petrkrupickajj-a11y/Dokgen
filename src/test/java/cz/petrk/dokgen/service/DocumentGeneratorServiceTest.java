@@ -7,6 +7,7 @@ import cz.petrk.dokgen.entity.SmazanaVestavenaSablona;
 import cz.petrk.dokgen.repository.SablonaRepository;
 import cz.petrk.dokgen.repository.SablonaVerzeRepository;
 import cz.petrk.dokgen.repository.SmazanaVestavenaSablonaRepository;
+import cz.petrk.dokgen.util.KlientData;
 import org.apache.poi.openxml4j.util.ZipSecureFile;
 import org.apache.poi.xwpf.model.XWPFHeaderFooterPolicy;
 import org.apache.poi.xwpf.usermodel.XWPFDocument;
@@ -36,9 +37,13 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.file.Path;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.zip.ZipEntry;
@@ -114,11 +119,20 @@ class DocumentGeneratorServiceTest {
         return klient;
     }
 
+    // Sablony pouzivaji vzdy i ${datum} (viz KlientController.sestavKontext v produkcnim
+    // kode) - test kontext ho proto musi obsahovat taky, jinak by u sablon s ${datum}
+    // zustal nenahrazeny placeholder a testy na "doesNotContain(\"${\")" by padaly.
+    private Map<String, String> vzorovyKontext(Klient klient) {
+        Map<String, String> kontext = new LinkedHashMap<>(KlientData.sestavKontext(klient));
+        kontext.put("datum", LocalDate.now().format(DateTimeFormatter.ofPattern("dd.MM.yyyy")));
+        return kontext;
+    }
+
     @Test
     void vygenerujDokumentNahradiPlaceholderyDatyKlienta() throws IOException {
         pripravSablonu(1L, "Smlouva o poskytování služeb", "smlouva.docx");
 
-        byte[] dokument = service.vygenerujDokument(vzorovyKlient(), 1L).obsah();
+        byte[] dokument = service.vygenerujDokument(1L, vzorovyKontext(vzorovyKlient()), List.of()).obsah();
 
         String text = celyTextDokumentu(dokument);
         assertThat(text).contains("Jan");
@@ -136,7 +150,7 @@ class DocumentGeneratorServiceTest {
         klient.setPrijmeni("Malá");
         // ostatni pole zustavaji null
 
-        byte[] dokument = service.vygenerujDokument(klient, 2L).obsah();
+        byte[] dokument = service.vygenerujDokument(2L, vzorovyKontext(klient), List.of()).obsah();
 
         String text = celyTextDokumentu(dokument);
         assertThat(text).doesNotContain("${");
@@ -153,7 +167,7 @@ class DocumentGeneratorServiceTest {
     void kazdaSablonaSeVygenerujeBezZbylychPlaceholderu(long id, String nazev, String soubor) throws IOException {
         pripravSablonu(id, nazev, soubor);
 
-        byte[] dokument = service.vygenerujDokument(vzorovyKlient(), id).obsah();
+        byte[] dokument = service.vygenerujDokument(id, vzorovyKontext(vzorovyKlient()), List.of()).obsah();
 
         String text = celyTextDokumentu(dokument);
         assertThat(text).doesNotContain("${");
@@ -171,7 +185,7 @@ class DocumentGeneratorServiceTest {
         // Hodnota poznamky nahodou obsahuje retezec "${datum}" jako obycejny text
         klient.setPoznamka("Platba proběhla dne ${datum} v hotovosti.");
 
-        byte[] dokument = service.vygenerujDokument(klient, 60L).obsah();
+        byte[] dokument = service.vygenerujDokument(60L, vzorovyKontext(klient), List.of()).obsah();
         String text = celyTextDokumentu(dokument);
 
         // "${datum}" v poznamce je jen doslovny text klienta, ne skutecny placeholder
@@ -185,7 +199,7 @@ class DocumentGeneratorServiceTest {
         given(sablonaRepository.findById(70L)).willReturn(Optional.of(
                 new Sablona("Test - zápatí a vnořená tabulka", "zapati-vnorena-tabulka.docx", false)));
 
-        byte[] dokument = service.vygenerujDokument(vzorovyKlient(), 70L).obsah();
+        byte[] dokument = service.vygenerujDokument(70L, vzorovyKontext(vzorovyKlient()), List.of()).obsah();
 
         try (XWPFDocument vysledek = new XWPFDocument(new ByteArrayInputStream(dokument))) {
             String textZapati = vysledek.getFooterList().get(0).getText();
@@ -237,7 +251,7 @@ class DocumentGeneratorServiceTest {
         klient.setJmeno("Petr");
         klient.setPrijmeni("Svoboda");
 
-        assertThatThrownBy(() -> service.vygenerujDokument(klient, 999L))
+        assertThatThrownBy(() -> service.vygenerujDokument(999L, vzorovyKontext(klient), List.of()))
                 .isInstanceOf(IllegalArgumentException.class);
     }
 
@@ -250,7 +264,7 @@ class DocumentGeneratorServiceTest {
         klient.setJmeno("Petr");
         klient.setPrijmeni("Svoboda");
 
-        assertThatThrownBy(() -> service.vygenerujDokument(klient, 42L))
+        assertThatThrownBy(() -> service.vygenerujDokument(42L, vzorovyKontext(klient), List.of()))
                 .isInstanceOf(IOException.class)
                 .hasMessageContaining("chybí nebo je poškozený");
     }
@@ -265,7 +279,7 @@ class DocumentGeneratorServiceTest {
         klient.setJmeno("Petr");
         klient.setPrijmeni("Svoboda");
 
-        assertThatThrownBy(() -> service.vygenerujDokument(klient, 43L))
+        assertThatThrownBy(() -> service.vygenerujDokument(43L, vzorovyKontext(klient), List.of()))
                 .isInstanceOf(IOException.class)
                 .hasMessageContaining("poškozená");
     }
