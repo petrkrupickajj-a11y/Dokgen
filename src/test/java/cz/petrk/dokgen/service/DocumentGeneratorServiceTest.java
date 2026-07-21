@@ -125,6 +125,16 @@ class DocumentGeneratorServiceTest {
     private Map<String, String> vzorovyKontext(Klient klient) {
         Map<String, String> kontext = new LinkedHashMap<>(KlientData.sestavKontext(klient));
         kontext.put("datum", LocalDate.now().format(DateTimeFormatter.ofPattern("dd.MM.yyyy")));
+        // Faktura navic pouziva tyhle klice (viz KlientController.vygenerujProKlienta) -
+        // ostatni sablony je proste nemaji, takze jejich pritomnost v kontextu nevadi.
+        kontext.put("splatnost", LocalDate.now().plusDays(14).format(DateTimeFormatter.ofPattern("dd.MM.yyyy")));
+        kontext.put("cisloFaktury", "FA-2026-001");
+        kontext.put("variabilniSymbol", "2026001");
+        kontext.put("celkem", "0,00");
+        kontext.put("dodavatel.nazev", "Coreforge");
+        kontext.put("dodavatel.sidlo", "Praha, Česká republika");
+        kontext.put("dodavatel.ico", "12345678");
+        kontext.put("dodavatel.cisloUctu", "123456789/0100");
         return kontext;
     }
 
@@ -172,6 +182,35 @@ class DocumentGeneratorServiceTest {
         String text = celyTextDokumentu(dokument);
         assertThat(text).doesNotContain("${");
         assertThat(text).contains("Novák");
+    }
+
+    // Konec-ku-konci test skutecne sablony faktura.docx - overuje, ze se Krok 2
+    // (opakovani radku), Krok 3 (castky) a Krok 5 (dodavatel) spravne slozi dohromady.
+    @Test
+    void fakturaSVicePolozkamiObsahujeDodavateleRadkyISpravnySoucet() throws IOException {
+        pripravSablonu(95L, "Faktura", "faktura.docx");
+
+        Map<String, String> kontext = vzorovyKontext(vzorovyKlient());
+        kontext.put("cisloFaktury", "FA-2026-042");
+        kontext.put("celkem", "2 600,90");
+        List<Map<String, String>> polozky = List.of(
+                Map.of("poradi", "1", "nazev", "Konzultace", "mnozstvi", "2", "cena", "1 250,50", "celkem", "2 501,00"),
+                Map.of("poradi", "2", "nazev", "Podpora", "mnozstvi", "1", "cena", "99,90", "celkem", "99,90"));
+
+        byte[] dokument = service.vygenerujDokument(95L, kontext, polozky).obsah();
+
+        try (XWPFDocument vysledek = new XWPFDocument(new ByteArrayInputStream(dokument))) {
+            String text = celyTextDokumentu(dokument);
+            assertThat(text).doesNotContain("${").doesNotContain("Doplnit");
+            assertThat(text).contains("FA-2026-042").contains("2 600,90").contains("Coreforge");
+
+            XWPFTable tabulkaPolozek = vysledek.getTables().get(0);
+            assertThat(tabulkaPolozek.getRows()).hasSize(3);
+            assertThat(tabulkaPolozek.getRow(1).getCell(0).getText()).isEqualTo("Konzultace");
+            assertThat(tabulkaPolozek.getRow(1).getCell(3).getText()).isEqualTo("2 501,00");
+            assertThat(tabulkaPolozek.getRow(2).getCell(0).getText()).isEqualTo("Podpora");
+            assertThat(tabulkaPolozek.getRow(2).getCell(3).getText()).isEqualTo("99,90");
+        }
     }
 
     @Test
