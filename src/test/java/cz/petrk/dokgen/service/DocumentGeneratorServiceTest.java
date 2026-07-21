@@ -236,6 +236,203 @@ class DocumentGeneratorServiceTest {
     }
 
     @Test
+    void opakovaniRadkuProNulPolozekOdstraniSablonovyRadekTabulkaZustaneSHlavickou() throws IOException {
+        uloziste.uloz("tabulka-polozek.docx", docxSTabulkouPolozek());
+        given(sablonaRepository.findById(80L)).willReturn(Optional.of(
+                new Sablona("Test - tabulka položek", "tabulka-polozek.docx", false)));
+
+        byte[] dokument = service.vygenerujDokument(80L, vzorovyKontext(vzorovyKlient()), List.of()).obsah();
+
+        try (XWPFDocument vysledek = new XWPFDocument(new ByteArrayInputStream(dokument))) {
+            XWPFTable tabulka = vysledek.getTables().get(0);
+            assertThat(tabulka.getRows()).hasSize(1);
+            assertThat(tabulka.getText()).doesNotContain("${polozka.");
+        }
+    }
+
+    @Test
+    void opakovaniRadkuProJednuPolozkuVytvoriJedenRadek() throws IOException {
+        uloziste.uloz("tabulka-polozek.docx", docxSTabulkouPolozek());
+        given(sablonaRepository.findById(81L)).willReturn(Optional.of(
+                new Sablona("Test - tabulka položek", "tabulka-polozek.docx", false)));
+
+        List<Map<String, String>> polozky = List.of(Map.of("nazev", "Konzultace", "cena", "1000"));
+        byte[] dokument = service.vygenerujDokument(81L, vzorovyKontext(vzorovyKlient()), polozky).obsah();
+
+        try (XWPFDocument vysledek = new XWPFDocument(new ByteArrayInputStream(dokument))) {
+            XWPFTable tabulka = vysledek.getTables().get(0);
+            assertThat(tabulka.getRows()).hasSize(2);
+            assertThat(tabulka.getRow(1).getCell(0).getText()).isEqualTo("Konzultace");
+            assertThat(tabulka.getRow(1).getCell(1).getText()).isEqualTo("1000");
+        }
+    }
+
+    @Test
+    void opakovaniRadkuProVicePolozekVytvoriRadekProKazdouPolozkuVeSpravnemPoradi() throws IOException {
+        uloziste.uloz("tabulka-polozek.docx", docxSTabulkouPolozek());
+        given(sablonaRepository.findById(82L)).willReturn(Optional.of(
+                new Sablona("Test - tabulka položek", "tabulka-polozek.docx", false)));
+
+        List<Map<String, String>> polozky = List.of(
+                Map.of("nazev", "Konzultace", "cena", "1000"),
+                Map.of("nazev", "Školení", "cena", "2500"),
+                Map.of("nazev", "Podpora", "cena", "500"));
+        byte[] dokument = service.vygenerujDokument(82L, vzorovyKontext(vzorovyKlient()), polozky).obsah();
+
+        try (XWPFDocument vysledek = new XWPFDocument(new ByteArrayInputStream(dokument))) {
+            XWPFTable tabulka = vysledek.getTables().get(0);
+            assertThat(tabulka.getRows()).hasSize(4);
+            assertThat(tabulka.getRow(1).getCell(0).getText()).isEqualTo("Konzultace");
+            assertThat(tabulka.getRow(2).getCell(0).getText()).isEqualTo("Školení");
+            assertThat(tabulka.getRow(3).getCell(0).getText()).isEqualTo("Podpora");
+            assertThat(tabulka.getText()).doesNotContain("${polozka.");
+        }
+    }
+
+    @Test
+    void zkopirovanyRadekZachovaFormatovaniPuvodnihoSablonovehoRadku() throws IOException {
+        uloziste.uloz("tabulka-polozek.docx", docxSTabulkouPolozek());
+        given(sablonaRepository.findById(83L)).willReturn(Optional.of(
+                new Sablona("Test - tabulka položek", "tabulka-polozek.docx", false)));
+
+        List<Map<String, String>> polozky = List.of(Map.of("nazev", "Konzultace", "cena", "1000"));
+        byte[] dokument = service.vygenerujDokument(83L, vzorovyKontext(vzorovyKlient()), polozky).obsah();
+
+        try (XWPFDocument vysledek = new XWPFDocument(new ByteArrayInputStream(dokument))) {
+            XWPFTableCell bunka = vysledek.getTables().get(0).getRow(1).getCell(0);
+            assertThat(bunka.getParagraphs().get(0).getRuns().get(0).isBold()).isTrue();
+            assertThat(bunka.getColor()).isEqualTo("F2F2F2");
+        }
+    }
+
+    @Test
+    void tabulkaBezLoopPlaceholderuZustaneBezeZmeny() throws IOException {
+        uloziste.uloz("tabulka-bez-polozek.docx", docxSTabulkouBezLoopPlaceholderu());
+        given(sablonaRepository.findById(84L)).willReturn(Optional.of(
+                new Sablona("Test - tabulka bez položek", "tabulka-bez-polozek.docx", false)));
+
+        List<Map<String, String>> polozky = List.of(Map.of("nazev", "Konzultace", "cena", "1000"));
+        byte[] dokument = service.vygenerujDokument(84L, vzorovyKontext(vzorovyKlient()), polozky).obsah();
+
+        try (XWPFDocument vysledek = new XWPFDocument(new ByteArrayInputStream(dokument))) {
+            XWPFTable tabulka = vysledek.getTables().get(0);
+            assertThat(tabulka.getRows()).hasSize(2);
+            assertThat(tabulka.getRow(1).getCell(0).getText()).isEqualTo("Nezávisí na položkách");
+        }
+    }
+
+    @Test
+    void viceTabulekJenJednaSPolozkamiSeZpracuje() throws IOException {
+        uloziste.uloz("dve-tabulky.docx", docxSeDvemaTabulkami());
+        given(sablonaRepository.findById(85L)).willReturn(Optional.of(
+                new Sablona("Test - dvě tabulky", "dve-tabulky.docx", false)));
+
+        List<Map<String, String>> polozky = List.of(Map.of("nazev", "Konzultace", "cena", "1000"));
+        byte[] dokument = service.vygenerujDokument(85L, vzorovyKontext(vzorovyKlient()), polozky).obsah();
+
+        try (XWPFDocument vysledek = new XWPFDocument(new ByteArrayInputStream(dokument))) {
+            XWPFTable prvniTabulka = vysledek.getTables().get(0);
+            XWPFTable druhaTabulka = vysledek.getTables().get(1);
+            assertThat(prvniTabulka.getRows()).hasSize(1);
+            assertThat(prvniTabulka.getRow(0).getCell(0).getText()).isEqualTo("Nezávisí na položkách");
+            assertThat(druhaTabulka.getRows()).hasSize(2);
+            assertThat(druhaTabulka.getRow(1).getCell(0).getText()).isEqualTo("Konzultace");
+        }
+    }
+
+    @Test
+    void loopRadekVeVnoreneTabulceSeTakeZpracuje() throws IOException {
+        uloziste.uloz("vnorena-tabulka-polozek.docx", docxSVnorenouTabulkouPolozek());
+        given(sablonaRepository.findById(86L)).willReturn(Optional.of(
+                new Sablona("Test - vnořená tabulka položek", "vnorena-tabulka-polozek.docx", false)));
+
+        List<Map<String, String>> polozky = List.of(
+                Map.of("nazev", "Konzultace"), Map.of("nazev", "Školení"));
+        byte[] dokument = service.vygenerujDokument(86L, vzorovyKontext(vzorovyKlient()), polozky).obsah();
+
+        try (XWPFDocument vysledek = new XWPFDocument(new ByteArrayInputStream(dokument))) {
+            XWPFTable vnorenaTabulka = vysledek.getTables().get(0).getRow(0).getCell(0).getTables().get(0);
+            assertThat(vnorenaTabulka.getRows()).hasSize(2);
+            assertThat(vnorenaTabulka.getRow(0).getCell(0).getText()).isEqualTo("Konzultace");
+            assertThat(vnorenaTabulka.getRow(1).getCell(0).getText()).isEqualTo("Školení");
+        }
+    }
+
+    /**
+     * Tabulka o hlavicce a jednom sablonovem radku s ${polozka.*} placeholdery -
+     * prvni bunka je tucne a ma vyplnovaci barvu, aby slo overit, ze kopie
+     * radku formatovani zdedi (viz zkopirovanyRadekZachovaFormatovaniPuvodnihoSablonovehoRadku).
+     */
+    private byte[] docxSTabulkouPolozek() throws IOException {
+        try (XWPFDocument dokument = new XWPFDocument()) {
+            XWPFTable tabulka = dokument.createTable(2, 2);
+            tabulka.getRow(0).getCell(0).setText("Název");
+            tabulka.getRow(0).getCell(1).setText("Cena");
+
+            XWPFTableRow sablonovyRadek = tabulka.getRow(1);
+            XWPFTableCell bunkaNazev = sablonovyRadek.getCell(0);
+            bunkaNazev.setText("${polozka.nazev}");
+            bunkaNazev.getParagraphs().get(0).getRuns().get(0).setBold(true);
+            bunkaNazev.setColor("F2F2F2");
+            sablonovyRadek.getCell(1).setText("${polozka.cena}");
+
+            ByteArrayOutputStream vystup = new ByteArrayOutputStream();
+            dokument.write(vystup);
+            return vystup.toByteArray();
+        }
+    }
+
+    /** Tabulka bez jakehokoliv ${polozka.*} placeholderu - musi zustat beze zmeny. */
+    private byte[] docxSTabulkouBezLoopPlaceholderu() throws IOException {
+        try (XWPFDocument dokument = new XWPFDocument()) {
+            XWPFTable tabulka = dokument.createTable(2, 1);
+            tabulka.getRow(0).getCell(0).setText("Hlavička");
+            tabulka.getRow(1).getCell(0).setText("Nezávisí na položkách");
+
+            ByteArrayOutputStream vystup = new ByteArrayOutputStream();
+            dokument.write(vystup);
+            return vystup.toByteArray();
+        }
+    }
+
+    /** Dve tabulky v jednom dokumentu - jen druha ma sablonovy radek s polozkami. */
+    private byte[] docxSeDvemaTabulkami() throws IOException {
+        try (XWPFDocument dokument = new XWPFDocument()) {
+            XWPFTable prvniTabulka = dokument.createTable(1, 1);
+            prvniTabulka.getRow(0).getCell(0).setText("Nezávisí na položkách");
+
+            dokument.createParagraph();
+
+            XWPFTable druhaTabulka = dokument.createTable(2, 1);
+            druhaTabulka.getRow(0).getCell(0).setText("Název");
+            druhaTabulka.getRow(1).getCell(0).setText("${polozka.nazev}");
+
+            ByteArrayOutputStream vystup = new ByteArrayOutputStream();
+            dokument.write(vystup);
+            return vystup.toByteArray();
+        }
+    }
+
+    /** Tabulka vnorena uvnitr bunky jine tabulky, se sablonovym radkem s polozkami. */
+    private byte[] docxSVnorenouTabulkouPolozek() throws IOException {
+        try (XWPFDocument dokument = new XWPFDocument()) {
+            XWPFTable vnejsiTabulka = dokument.createTable(1, 1);
+            XWPFTableCell vnejsiBunka = vnejsiTabulka.getRow(0).getCell(0);
+
+            XmlCursor kurzor = vnejsiBunka.getParagraphs().get(0).getCTP().newCursor();
+            XWPFTable vnorenaTabulka = vnejsiBunka.insertNewTbl(kurzor);
+            kurzor.dispose();
+            XWPFTableRow sablonovyRadek = vnorenaTabulka.createRow();
+            XWPFTableCell bunka = sablonovyRadek.getCell(0) != null ? sablonovyRadek.getCell(0) : sablonovyRadek.createCell();
+            bunka.setText("${polozka.nazev}");
+
+            ByteArrayOutputStream vystup = new ByteArrayOutputStream();
+            dokument.write(vystup);
+            return vystup.toByteArray();
+        }
+    }
+
+    @Test
     void getDostupneSablonyVraciSablonyZRepositoryeSerazeneDlePodleNazvu() {
         List<Sablona> ocekavane = List.of(new Sablona("Faktura", "faktura.docx", true));
         given(sablonaRepository.findAll(any(Sort.class))).willReturn(ocekavane);

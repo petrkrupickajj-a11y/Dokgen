@@ -16,6 +16,7 @@ import org.apache.poi.xwpf.usermodel.XWPFRun;
 import org.apache.poi.xwpf.usermodel.XWPFTable;
 import org.apache.poi.xwpf.usermodel.XWPFTableCell;
 import org.apache.poi.xwpf.usermodel.XWPFTableRow;
+import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTRow;
 import org.springframework.context.MessageSource;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.data.domain.Sort;
@@ -25,6 +26,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -94,6 +96,12 @@ public class DocumentGeneratorService {
         try (ByteArrayInputStream vstup = new ByteArrayInputStream(uloziste.nacti(sablona.getNazevSouboru()));
              XWPFDocument dokument = new XWPFDocument(vstup);
              ByteArrayOutputStream vystup = new ByteArrayOutputStream()) {
+
+            // Opakovani sablonoveho radku tabulky musi probehnout pred obecnym
+            // nahrazenim placeholderu - nove vlozene radky pak projdou stejnym
+            // pruchodem nize spolu se zbytkem dokumentu (napr. kdyby polozka
+            // nahodou obsahovala i jiny nez ${polozka.*} placeholder).
+            zpracujTabulkyPolozek(dokument, polozky);
 
             // Telo dokumentu (odstavce i tabulky vcetne vnorenych - viz nahradVTele)
             nahradVTele(dokument, kontext, vzorPlaceholderu);
@@ -286,6 +294,89 @@ public class DocumentGeneratorService {
     /** Odstrani obalku "${" a "}" z nalezeneho placeholderu, aby slo hodnotu dohledat v kontextu podle holeho nazvu. */
     private String holyNazevPlaceholderu(String placeholderSObalkou) {
         return placeholderSObalkou.substring(2, placeholderSObalkou.length() - 1);
+    }
+
+    /**
+     * Konvence opakovani radku tabulky: radek, jehoz text obsahuje placeholder
+     * s timhle prefixem, je "sablonovy" - misto nej se vlozi jedna kopie za
+     * kazdou polozku ze seznamu. Zamerne obecne (funguje pro libovolnou sablonu
+     * s touhle konvenci, ne jen pro fakturu) - viz zpracujTabulku.
+     */
+    private static final String PREFIX_POLOZKA = "${polozka.";
+
+    /** Projde vsechny tabulky "tela" dokumentu (vcetne vnorenych) a v kazde zpracuje pripadny sablonovy radek. */
+    private void zpracujTabulkyPolozek(IBody telo, List<Map<String, String>> polozky) {
+        for (XWPFTable tabulka : telo.getTables()) {
+            zpracujTabulku(tabulka, polozky);
+            for (XWPFTableRow radek : tabulka.getRows()) {
+                for (XWPFTableCell bunka : radek.getTableCells()) {
+                    zpracujTabulkyPolozek(bunka, polozky);
+                }
+            }
+        }
+    }
+
+    /**
+     * Najde v tabulce sablonovy radek a nahradi ho N kopiemi (jednou za kazdou
+     * polozku). Kopiruje se XML radku (CTRow.copy()), ne text - diky tomu
+     * kopie zdedi formatovani bunek, sirky sloupcu i ohraniceni sablonoveho
+     * radku. Tabulka bez sablonoveho radku (contains ${polozka. v zadne bunce)
+     * zustane beze zmeny.
+     */
+    private void zpracujTabulku(XWPFTable tabulka, List<Map<String, String>> polozky) {
+        int indexSablonovehoRadku = najdiIndexSablonovehoRadku(tabulka);
+        if (indexSablonovehoRadku < 0) {
+            return;
+        }
+        XWPFTableRow sablonovyRadek = tabulka.getRow(indexSablonovehoRadku);
+
+        int index = indexSablonovehoRadku;
+        for (Map<String, String> polozka : polozky) {
+            CTRow kopie = (CTRow) sablonovyRadek.getCtRow().copy();
+            XWPFTableRow novy = new XWPFTableRow(kopie, tabulka);
+            // Nahrazeni MUSI probehnout pred addRow() - ta pri vkladani do XML
+            // stromu tabulky (ctTbl) obsah radku znovu zkopiruje, takze uprava
+            // provedena az na jiz vlozenem radku by se do vysledneho dokumentu
+            // vubec nepropsala.
+            nahradPolozkuVRadku(novy, polozka);
+            tabulka.addRow(novy, index++);
+        }
+
+        // Puvodni sablonovy radek je po vlozeni kopii posunuty na pozici "index"
+        // (za vsechny nove vlozene radky) - ted uz splnil svuj ucel a odstrani se.
+        // Pri prazdnem seznamu polozek se index nezmenil, takze se odstrani rovnou on.
+        tabulka.removeRow(index);
+    }
+
+    private int najdiIndexSablonovehoRadku(XWPFTable tabulka) {
+        List<XWPFTableRow> radky = tabulka.getRows();
+        for (int i = 0; i < radky.size(); i++) {
+            if (obsahujeSablonovyPlaceholder(radky.get(i))) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    private boolean obsahujeSablonovyPlaceholder(XWPFTableRow radek) {
+        for (XWPFTableCell bunka : radek.getTableCells()) {
+            if (bunka.getText() != null && bunka.getText().contains(PREFIX_POLOZKA)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /** Nahradi v jednom zkopirovanem radku placeholdery ${polozka.<klic>} hodnotami dane polozky. */
+    private void nahradPolozkuVRadku(XWPFTableRow radek, Map<String, String> polozka) {
+        Map<String, String> data = new LinkedHashMap<>();
+        for (Map.Entry<String, String> zaznam : polozka.entrySet()) {
+            data.put("polozka." + zaznam.getKey(), zaznam.getValue());
+        }
+        Pattern vzor = sestavVzorPlaceholderu(data.keySet());
+        for (XWPFTableCell bunka : radek.getTableCells()) {
+            nahradVTele(bunka, data, vzor);
+        }
     }
 
     /**
