@@ -28,6 +28,7 @@ class VygenerovanyDokumentUlozisteServiceTest {
         ResourceBundleMessageSource zpravy = new ResourceBundleMessageSource();
         zpravy.setBasename("messages");
         zpravy.setDefaultEncoding("UTF-8");
+        zpravy.setFallbackToSystemLocale(false);
         uloziste = new VygenerovanyDokumentUlozisteService(adresar.toString(), zpravy);
     }
 

@@ -83,6 +83,7 @@ class DocumentGeneratorServiceTest {
         ResourceBundleMessageSource zpravy = new ResourceBundleMessageSource();
         zpravy.setBasename("messages");
         zpravy.setDefaultEncoding("UTF-8");
+        zpravy.setFallbackToSystemLocale(false);
 
         sablonaRepository = Mockito.mock(SablonaRepository.class);
         uloziste = new SablonaUlozisteService(uloznyAdresar.toString(), zpravy);

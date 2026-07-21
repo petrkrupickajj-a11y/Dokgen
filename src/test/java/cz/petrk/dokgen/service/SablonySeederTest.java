@@ -44,6 +44,7 @@ class SablonySeederTest {
         ResourceBundleMessageSource zpravy = new ResourceBundleMessageSource();
         zpravy.setBasename("messages");
         zpravy.setDefaultEncoding("UTF-8");
+        zpravy.setFallbackToSystemLocale(false);
 
         sablonaRepository = Mockito.mock(SablonaRepository.class);
         smazaneVestaveneRepository = Mockito.mock(SmazanaVestavenaSablonaRepository.class);

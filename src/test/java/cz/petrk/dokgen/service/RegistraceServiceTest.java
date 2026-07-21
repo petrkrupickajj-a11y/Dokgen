@@ -35,6 +35,7 @@ class RegistraceServiceTest {
         ResourceBundleMessageSource zpravy = new ResourceBundleMessageSource();
         zpravy.setBasename("messages");
         zpravy.setDefaultEncoding("UTF-8");
+        zpravy.setFallbackToSystemLocale(false);
 
         uzivatelRepository = Mockito.mock(UzivatelRepository.class);
         passwordEncoder = Mockito.mock(PasswordEncoder.class);

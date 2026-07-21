@@ -33,6 +33,7 @@ class GenerovaneDokumentyUklidRunnerTest {
         ResourceBundleMessageSource zpravy = new ResourceBundleMessageSource();
         zpravy.setBasename("messages");
         zpravy.setDefaultEncoding("UTF-8");
+        zpravy.setFallbackToSystemLocale(false);
 
         repository = Mockito.mock(VygenerovanyDokumentRepository.class);
         uloziste = new VygenerovanyDokumentUlozisteService(uloznyAdresar.toString(), zpravy);

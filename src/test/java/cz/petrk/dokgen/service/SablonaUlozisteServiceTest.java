@@ -29,6 +29,7 @@ class SablonaUlozisteServiceTest {
         ResourceBundleMessageSource zpravy = new ResourceBundleMessageSource();
         zpravy.setBasename("messages");
         zpravy.setDefaultEncoding("UTF-8");
+        zpravy.setFallbackToSystemLocale(false);
         uloziste = new SablonaUlozisteService(adresar.toString(), zpravy);
     }
 

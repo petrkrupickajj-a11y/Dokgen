@@ -45,6 +45,7 @@ class ResetHeslaServiceTest {
         ResourceBundleMessageSource zpravy = new ResourceBundleMessageSource();
         zpravy.setBasename("messages");
         zpravy.setDefaultEncoding("UTF-8");
+        zpravy.setFallbackToSystemLocale(false);
 
         uzivatelRepository = Mockito.mock(UzivatelRepository.class);
         resetHeslaRepository = Mockito.mock(ResetHeslaRepository.class);

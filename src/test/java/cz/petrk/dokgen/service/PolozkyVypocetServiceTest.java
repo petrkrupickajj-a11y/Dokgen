@@ -24,6 +24,7 @@ class PolozkyVypocetServiceTest {
         ResourceBundleMessageSource zpravy = new ResourceBundleMessageSource();
         zpravy.setBasename("messages");
         zpravy.setDefaultEncoding("UTF-8");
+        zpravy.setFallbackToSystemLocale(false);
         service = new PolozkyVypocetService(zpravy);
     }
 
