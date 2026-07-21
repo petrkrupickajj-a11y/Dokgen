@@ -34,7 +34,9 @@ import java.time.Clock;
  */
 @Configuration
 @EnableWebSecurity
-@EnableConfigurationProperties(UzivateleProperties.class)
+// DodavatelProperties se zabezpecenim nesouvisi - jen vyuziva stejny
+// registracni bod jako UzivateleProperties, appka zatim jiny nema.
+@EnableConfigurationProperties({UzivateleProperties.class, DodavatelProperties.class})
 public class SecurityConfig {
 
     @Bean

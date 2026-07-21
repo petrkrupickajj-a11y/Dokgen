@@ -1,5 +1,6 @@
 package cz.petrk.dokgen.controller;
 
+import cz.petrk.dokgen.config.DodavatelProperties;
 import cz.petrk.dokgen.entity.Klient;
 import cz.petrk.dokgen.entity.Sablona;
 import cz.petrk.dokgen.entity.VygenerovanyDokument;
@@ -66,6 +67,9 @@ class KlientControllerTest {
 
     @MockitoBean
     private VygenerovanyDokumentUlozisteService vygenerovanyDokumentUloziste;
+
+    @MockitoBean
+    private DodavatelProperties dodavatelProperties;
 
     @Test
     void seznamZobraziVsechnyKlienty() throws Exception {
@@ -320,6 +324,33 @@ class KlientControllerTest {
         DateTimeFormatter format = DateTimeFormatter.ofPattern("dd.MM.yyyy");
         assertThat(kontextCaptor.getValue().get("datum")).isEqualTo(LocalDate.now().format(format));
         assertThat(kontextCaptor.getValue().get("splatnost")).isEqualTo(LocalDate.now().plusDays(14).format(format));
+    }
+
+    @Test
+    void generujDokumentPosleUdajeDodavateleZNastaveniVKontextu() throws Exception {
+        Klient klient = vzorovyKlient(1L);
+        given(klientRepository.findById(1L)).willReturn(Optional.of(klient));
+        given(dodavatelProperties.getNazev()).willReturn("Coreforge");
+        given(dodavatelProperties.getSidlo()).willReturn("Praha, Česká republika");
+        given(dodavatelProperties.getIco()).willReturn("12345678");
+        given(dodavatelProperties.getCisloUctu()).willReturn("123456789/0100");
+        Sablona sablona = new Sablona("Faktura", "faktura.docx", true);
+        given(documentGeneratorService.vygenerujDokument(eq(1L), any(Map.class), any(List.class)))
+                .willReturn(new VysledekGenerovani("obsah".getBytes(), sablona));
+        given(historieService.zaznamenej(any(), any(), any())).willReturn(new VygenerovanyDokument(1L, "Jan Novák", "Faktura", "WORD"));
+
+        mockMvc.perform(post("/generovat/1").with(csrf())
+                        .param("sablonaId", "1")
+                        .param("format", "WORD"))
+                .andExpect(status().isOk());
+
+        ArgumentCaptor<Map<String, String>> kontextCaptor = ArgumentCaptor.forClass(Map.class);
+        verify(documentGeneratorService).vygenerujDokument(eq(1L), kontextCaptor.capture(), any());
+        assertThat(kontextCaptor.getValue())
+                .containsEntry("dodavatel.nazev", "Coreforge")
+                .containsEntry("dodavatel.sidlo", "Praha, Česká republika")
+                .containsEntry("dodavatel.ico", "12345678")
+                .containsEntry("dodavatel.cisloUctu", "123456789/0100");
     }
 
     @Test

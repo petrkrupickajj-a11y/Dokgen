@@ -1,5 +1,6 @@
 package cz.petrk.dokgen.controller;
 
+import cz.petrk.dokgen.config.DodavatelProperties;
 import cz.petrk.dokgen.entity.Klient;
 import cz.petrk.dokgen.entity.Sablona;
 import cz.petrk.dokgen.entity.VygenerovanyDokument;
@@ -9,6 +10,7 @@ import cz.petrk.dokgen.service.HistorieService;
 import cz.petrk.dokgen.service.PdfExportService;
 import cz.petrk.dokgen.service.VygenerovanyDokumentUlozisteService;
 import cz.petrk.dokgen.service.VysledekGenerovani;
+import cz.petrk.dokgen.util.DodavatelData;
 import cz.petrk.dokgen.util.KlientData;
 import cz.petrk.dokgen.util.NazevSouboru;
 import cz.petrk.dokgen.util.Vyhledani;
@@ -59,6 +61,7 @@ public class KlientController {
     private final PdfExportService pdfExportService;
     private final HistorieService historieService;
     private final VygenerovanyDokumentUlozisteService vygenerovanyDokumentUloziste;
+    private final DodavatelProperties dodavatelProperties;
     private final MessageSource zpravy;
 
     public KlientController(KlientRepository klientRepository,
@@ -66,12 +69,14 @@ public class KlientController {
                              PdfExportService pdfExportService,
                              HistorieService historieService,
                              VygenerovanyDokumentUlozisteService vygenerovanyDokumentUloziste,
+                             DodavatelProperties dodavatelProperties,
                              MessageSource zpravy) {
         this.klientRepository = klientRepository;
         this.documentGeneratorService = documentGeneratorService;
         this.pdfExportService = pdfExportService;
         this.historieService = historieService;
         this.vygenerovanyDokumentUloziste = vygenerovanyDokumentUloziste;
+        this.dodavatelProperties = dodavatelProperties;
         this.zpravy = zpravy;
     }
 
@@ -90,6 +95,7 @@ public class KlientController {
     // sablona polozky/splatnost pouziva - to resi az samotna sablona.
     private Map<String, String> sestavKontext(Klient klient, int splatnostDny) {
         Map<String, String> kontext = new LinkedHashMap<>(KlientData.sestavKontext(klient));
+        kontext.putAll(DodavatelData.sestavKontext(dodavatelProperties));
         LocalDate dnesniDatum = LocalDate.now();
         kontext.put("datum", dnesniDatum.format(FORMAT_DATA));
         kontext.put("splatnost", dnesniDatum.plusDays(splatnostDny).format(FORMAT_DATA));
