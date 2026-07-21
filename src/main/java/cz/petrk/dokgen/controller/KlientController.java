@@ -50,6 +50,10 @@ public class KlientController {
 
     private static final DateTimeFormatter FORMAT_DATA = DateTimeFormatter.ofPattern("dd.MM.yyyy");
 
+    // Vychozi splatnost, kdyz formular pocet dni neposle (napr. nahled dokumentu) -
+    // stejna vychozi hodnota jako u pole "splatnost ve dnech" ve formulari generovani.
+    private static final int VYCHOZI_SPLATNOST_DNY = 14;
+
     private final KlientRepository klientRepository;
     private final DocumentGeneratorService documentGeneratorService;
     private final PdfExportService pdfExportService;
@@ -78,8 +82,17 @@ public class KlientController {
     // Datum vygenerovani patri do kontextu kazdeho dokumentu (${datum} pouzivaji
     // vsechny vestavene sablony), bez ohledu na to, jestli sablona ma i polozky.
     private Map<String, String> sestavKontext(Klient klient) {
+        return sestavKontext(klient, VYCHOZI_SPLATNOST_DNY);
+    }
+
+    // ${splatnost} pocitame vzdy (i pro sablony bez tohoto placeholderu - tam
+    // se prosto nepouzije), aby nebylo potreba rozlisovat, jestli vybrana
+    // sablona polozky/splatnost pouziva - to resi az samotna sablona.
+    private Map<String, String> sestavKontext(Klient klient, int splatnostDny) {
         Map<String, String> kontext = new LinkedHashMap<>(KlientData.sestavKontext(klient));
-        kontext.put("datum", LocalDate.now().format(FORMAT_DATA));
+        LocalDate dnesniDatum = LocalDate.now();
+        kontext.put("datum", dnesniDatum.format(FORMAT_DATA));
+        kontext.put("splatnost", dnesniDatum.plusDays(splatnostDny).format(FORMAT_DATA));
         return kontext;
     }
 

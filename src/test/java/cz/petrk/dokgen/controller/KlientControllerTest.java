@@ -10,6 +10,7 @@ import cz.petrk.dokgen.service.PdfExportService;
 import cz.petrk.dokgen.service.VygenerovanyDokumentUlozisteService;
 import cz.petrk.dokgen.service.VysledekGenerovani;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -19,10 +20,13 @@ import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.not;
 import static org.mockito.ArgumentMatchers.any;
@@ -293,6 +297,29 @@ class KlientControllerTest {
 
         verify(historieService).zaznamenej(klient, sablona, "WORD");
         verify(vygenerovanyDokumentUloziste).uloz(42L, "WORD", obsah);
+    }
+
+    // ${splatnost} bez udaje z formulare pocita s vychozimi 14 dny od dnesniho
+    // data (formularove pole pribyde az s tabulkou polozek) - viz KlientController.VYCHOZI_SPLATNOST_DNY.
+    @Test
+    void generujDokumentPocitaSplatnostCtrnactDniOdDnesnihoData() throws Exception {
+        Klient klient = vzorovyKlient(1L);
+        given(klientRepository.findById(1L)).willReturn(Optional.of(klient));
+        Sablona sablona = new Sablona("Faktura", "faktura.docx", true);
+        given(documentGeneratorService.vygenerujDokument(eq(1L), any(Map.class), any(List.class)))
+                .willReturn(new VysledekGenerovani("obsah".getBytes(), sablona));
+        given(historieService.zaznamenej(any(), any(), any())).willReturn(new VygenerovanyDokument(1L, "Jan Novák", "Faktura", "WORD"));
+
+        mockMvc.perform(post("/generovat/1").with(csrf())
+                        .param("sablonaId", "1")
+                        .param("format", "WORD"))
+                .andExpect(status().isOk());
+
+        ArgumentCaptor<Map<String, String>> kontextCaptor = ArgumentCaptor.forClass(Map.class);
+        verify(documentGeneratorService).vygenerujDokument(eq(1L), kontextCaptor.capture(), any());
+        DateTimeFormatter format = DateTimeFormatter.ofPattern("dd.MM.yyyy");
+        assertThat(kontextCaptor.getValue().get("datum")).isEqualTo(LocalDate.now().format(format));
+        assertThat(kontextCaptor.getValue().get("splatnost")).isEqualTo(LocalDate.now().plusDays(14).format(format));
     }
 
     @Test
