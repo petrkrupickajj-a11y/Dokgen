@@ -129,6 +129,45 @@ public class DocumentGeneratorService {
     }
 
     /**
+     * Zjisti, jestli sablona pouziva konvenci opakovani radku (obsahuje niekde
+     * sablonovy radek s ${polozka.) - pro /generovat/{id}, kde formular
+     * zobrazuje sekci s polozkami jen u takovych sablon.
+     *
+     * Sablonu pri kazdem volani znovu nacte a projde, misto aby si priznak
+     * ulozila primo do entity Sablona - jednodussi cesta bez rizika, ze by
+     * ulozeny priznak zastaral po nahrazeni obsahu souboru pres "Nahradit" na
+     * /sablony, a bez potreby DB migrace. Poctem sablon v teto appce (jednotky
+     * az desitky) je dodatecne cteni souboru pri kazdem zobrazeni /generovat/{id}
+     * zanedbatelne.
+     */
+    public boolean sablonaObsahujePolozky(Sablona sablona) throws IOException {
+        try (ByteArrayInputStream vstup = new ByteArrayInputStream(uloziste.nacti(sablona.getNazevSouboru()));
+             XWPFDocument dokument = new XWPFDocument(vstup)) {
+            return obsahujeSablonovyRadekKdekoliv(dokument);
+        } catch (IOException e) {
+            throw new IOException(zprava("chyba.sablona.nacteni_selhalo", sablona.getNazev()), e);
+        } catch (RuntimeException e) {
+            throw new IOException(zprava("chyba.sablona.poskozena", sablona.getNazev()), e);
+        }
+    }
+
+    private boolean obsahujeSablonovyRadekKdekoliv(IBody telo) {
+        for (XWPFTable tabulka : telo.getTables()) {
+            if (najdiIndexSablonovehoRadku(tabulka) >= 0) {
+                return true;
+            }
+            for (XWPFTableRow radek : tabulka.getRows()) {
+                for (XWPFTableCell bunka : radek.getTableCells()) {
+                    if (obsahujeSablonovyRadekKdekoliv(bunka)) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
+    /**
      * Nahraje novou sablonu pres upload z /sablony. Soubor se nejdriv
      * overi, ze jde vubec otevrit jako platny .docx, aby se poskozeny/spatny
      * soubor odmitl hned pri nahravani a ne az pri prvnim pokusu o generovani.

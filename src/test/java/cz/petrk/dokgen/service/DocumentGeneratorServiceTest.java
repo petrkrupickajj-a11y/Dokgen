@@ -322,6 +322,32 @@ class DocumentGeneratorServiceTest {
     }
 
     @Test
+    void sablonaObsahujePolozkySablonouSTabulkouPolozekVratiTrue() throws IOException {
+        pripravSablonuZObsahu(90L, "Test - má položky", "ma-polozky.docx", docxSTabulkouPolozek());
+
+        assertThat(service.sablonaObsahujePolozky(sablonaRepository.findById(90L).orElseThrow())).isTrue();
+    }
+
+    @Test
+    void sablonaObsahujePolozkySablonouBezTabulkyPolozekVratiFalse() throws IOException {
+        pripravSablonuZObsahu(91L, "Test - nemá položky", "nema-polozky.docx", docxSTabulkouBezLoopPlaceholderu());
+
+        assertThat(service.sablonaObsahujePolozky(sablonaRepository.findById(91L).orElseThrow())).isFalse();
+    }
+
+    @Test
+    void sablonaObsahujePolozkySePolozkySeSkryteVeVnoreneTabulceVratiTrue() throws IOException {
+        pripravSablonuZObsahu(92L, "Test - vnořené položky", "vnorene-polozky.docx", docxSVnorenouTabulkouPolozek());
+
+        assertThat(service.sablonaObsahujePolozky(sablonaRepository.findById(92L).orElseThrow())).isTrue();
+    }
+
+    private void pripravSablonuZObsahu(long id, String nazev, String souborNazev, byte[] obsah) throws IOException {
+        uloziste.uloz(souborNazev, obsah);
+        given(sablonaRepository.findById(id)).willReturn(Optional.of(new Sablona(nazev, souborNazev, false)));
+    }
+
+    @Test
     void viceTabulekJenJednaSPolozkamiSeZpracuje() throws IOException {
         uloziste.uloz("dve-tabulky.docx", docxSeDvemaTabulkami());
         given(sablonaRepository.findById(85L)).willReturn(Optional.of(

@@ -8,8 +8,10 @@ import cz.petrk.dokgen.repository.KlientRepository;
 import cz.petrk.dokgen.service.DocumentGeneratorService;
 import cz.petrk.dokgen.service.HistorieService;
 import cz.petrk.dokgen.service.PdfExportService;
+import cz.petrk.dokgen.service.PolozkyVypocetService;
 import cz.petrk.dokgen.service.VygenerovanyDokumentUlozisteService;
 import cz.petrk.dokgen.service.VysledekGenerovani;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -70,6 +72,17 @@ class KlientControllerTest {
 
     @MockitoBean
     private DodavatelProperties dodavatelProperties;
+
+    @MockitoBean
+    private PolozkyVypocetService polozkyVypocetService;
+
+    // Vychozi stub pro vsechny testy, ktere polozky faktury vubec neresi -
+    // bez nej by nestubovane volani spocti() vratilo null a controller by
+    // pri sestavovani kontextu spadl na NullPointerException.
+    @BeforeEach
+    void stubujPolozkyVypocetService() {
+        given(polozkyVypocetService.spocti(any())).willReturn(new PolozkyVypocetService.Vysledek(List.of(), "0,00"));
+    }
 
     @Test
     void seznamZobraziVsechnyKlienty() throws Exception {
@@ -268,7 +281,27 @@ class KlientControllerTest {
         mockMvc.perform(get("/generovat/1"))
                 .andExpect(status().isOk())
                 .andExpect(view().name("generovat"))
-                .andExpect(model().attributeExists("klient", "sablony"));
+                .andExpect(model().attributeExists("klient", "sablony", "formular"));
+    }
+
+    // Sekce s polozkami se v generovat.html zobrazuje/skryva podle priznaku
+    // maPolozky u kazde nabizene sablony (viz KlientController.SablonaVolba).
+    @Test
+    void vyberSablonyOznaciKteraSablonaMaPolozky() throws Exception {
+        Klient klient = new Klient();
+        klient.setId(1L);
+        given(klientRepository.findById(1L)).willReturn(Optional.of(klient));
+        Sablona faktura = new Sablona("Faktura", "faktura.docx", true);
+        Sablona smlouva = new Sablona("Smlouva", "smlouva.docx", true);
+        given(documentGeneratorService.getDostupneSablony()).willReturn(List.of(faktura, smlouva));
+        given(documentGeneratorService.sablonaObsahujePolozky(faktura)).willReturn(true);
+        given(documentGeneratorService.sablonaObsahujePolozky(smlouva)).willReturn(false);
+
+        mockMvc.perform(get("/generovat/1"))
+                .andExpect(status().isOk())
+                .andExpect(model().attribute("sablony", List.of(
+                        new KlientController.SablonaVolba(faktura, true),
+                        new KlientController.SablonaVolba(smlouva, false))));
     }
 
     @Test
@@ -351,6 +384,90 @@ class KlientControllerTest {
                 .containsEntry("dodavatel.sidlo", "Praha, Česká republika")
                 .containsEntry("dodavatel.ico", "12345678")
                 .containsEntry("dodavatel.cisloUctu", "123456789/0100");
+    }
+
+    @Test
+    void generujDokumentPosleCisloFakturySplatnostAOdvozenyVariabilniSymbol() throws Exception {
+        Klient klient = vzorovyKlient(1L);
+        given(klientRepository.findById(1L)).willReturn(Optional.of(klient));
+        Sablona sablona = new Sablona("Faktura", "faktura.docx", true);
+        given(documentGeneratorService.vygenerujDokument(eq(1L), any(Map.class), any(List.class)))
+                .willReturn(new VysledekGenerovani("obsah".getBytes(), sablona));
+        given(historieService.zaznamenej(any(), any(), any())).willReturn(new VygenerovanyDokument(1L, "Jan Novák", "Faktura", "WORD"));
+
+        mockMvc.perform(post("/generovat/1").with(csrf())
+                        .param("sablonaId", "1")
+                        .param("format", "WORD")
+                        .param("cisloFaktury", "FA-2026-007")
+                        .param("splatnostDny", "30"))
+                .andExpect(status().isOk());
+
+        ArgumentCaptor<Map<String, String>> kontextCaptor = ArgumentCaptor.forClass(Map.class);
+        verify(documentGeneratorService).vygenerujDokument(eq(1L), kontextCaptor.capture(), any());
+        DateTimeFormatter format = DateTimeFormatter.ofPattern("dd.MM.yyyy");
+        assertThat(kontextCaptor.getValue())
+                .containsEntry("cisloFaktury", "FA-2026-007")
+                .containsEntry("variabilniSymbol", "2026007")
+                .containsEntry("splatnost", LocalDate.now().plusDays(30).format(format));
+    }
+
+    // Radky pridane JS-em ve formulari se odesilaji jako polozky[0].nazev,
+    // polozky[0].mnozstvi, polozky[0].cena atd. - overuje, ze se spravne
+    // svazi do FakturaForm.polozky a predaji PolozkyVypocetService.
+    @Test
+    void generujDokumentPredaPolozkyZFormulareKVypoctu() throws Exception {
+        Klient klient = vzorovyKlient(1L);
+        given(klientRepository.findById(1L)).willReturn(Optional.of(klient));
+        Sablona sablona = new Sablona("Faktura", "faktura.docx", true);
+        given(documentGeneratorService.vygenerujDokument(eq(1L), any(Map.class), any(List.class)))
+                .willReturn(new VysledekGenerovani("obsah".getBytes(), sablona));
+        given(historieService.zaznamenej(any(), any(), any())).willReturn(new VygenerovanyDokument(1L, "Jan Novák", "Faktura", "WORD"));
+        given(polozkyVypocetService.spocti(any())).willReturn(
+                new PolozkyVypocetService.Vysledek(List.of(Map.of("poradi", "1", "nazev", "Konzultace")), "1 000,00"));
+
+        mockMvc.perform(post("/generovat/1").with(csrf())
+                        .param("sablonaId", "1")
+                        .param("format", "WORD")
+                        .param("polozky[0].nazev", "Konzultace")
+                        .param("polozky[0].mnozstvi", "2")
+                        .param("polozky[0].cena", "500"))
+                .andExpect(status().isOk());
+
+        ArgumentCaptor<List<PolozkyVypocetService.PolozkaVstup>> vstupCaptor = ArgumentCaptor.forClass(List.class);
+        verify(polozkyVypocetService).spocti(vstupCaptor.capture());
+        assertThat(vstupCaptor.getValue()).hasSize(1);
+        assertThat(vstupCaptor.getValue().get(0).nazev()).isEqualTo("Konzultace");
+        assertThat(vstupCaptor.getValue().get(0).mnozstvi()).isEqualByComparingTo("2");
+        assertThat(vstupCaptor.getValue().get(0).cena()).isEqualByComparingTo("500");
+
+        ArgumentCaptor<Map<String, String>> kontextCaptor = ArgumentCaptor.forClass(Map.class);
+        ArgumentCaptor<List<Map<String, String>>> polozkyCaptor = ArgumentCaptor.forClass(List.class);
+        verify(documentGeneratorService).vygenerujDokument(eq(1L), kontextCaptor.capture(), polozkyCaptor.capture());
+        assertThat(kontextCaptor.getValue()).containsEntry("celkem", "1 000,00");
+        assertThat(polozkyCaptor.getValue()).containsExactly(Map.of("poradi", "1", "nazev", "Konzultace"));
+    }
+
+    // Validace polozek (nazev/mnozstvi/cena) se hlasi stejne jako ostatni chyby
+    // generovani (chybaGenerovani flash + presmerovani zpet), ne jako
+    // field-level chyby formulare klienta.
+    @Test
+    void generujDokumentSNeplatnouPolozkouSePresmerujeZpetSHlaskouChybaGenerovani() throws Exception {
+        Klient klient = vzorovyKlient(1L);
+        given(klientRepository.findById(1L)).willReturn(Optional.of(klient));
+        given(polozkyVypocetService.spocti(any()))
+                .willThrow(new IllegalArgumentException("Cena položky nesmí být záporná."));
+
+        mockMvc.perform(post("/generovat/1").with(csrf())
+                        .param("sablonaId", "1")
+                        .param("format", "WORD")
+                        .param("polozky[0].nazev", "Konzultace")
+                        .param("polozky[0].mnozstvi", "1")
+                        .param("polozky[0].cena", "-10"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/generovat/1"))
+                .andExpect(flash().attribute("chybaGenerovani", "Cena položky nesmí být záporná."));
+
+        verify(documentGeneratorService, never()).vygenerujDokument(any(), any(), any());
     }
 
     @Test

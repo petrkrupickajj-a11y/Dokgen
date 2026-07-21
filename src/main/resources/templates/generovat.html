@@ -34,8 +34,9 @@
         <form id="formularGenerovani" th:action="@{/generovat/{id}(id=${klient.id})}" method="post">
             <label for="sablonaId" th:text="#{generovat.vyber_sablonu}">Vyber šablonu</label>
             <select id="sablonaId" name="sablonaId">
-                <option th:each="s : ${sablony}" th:value="${s.id}"
-                        th:text="${s.nazev} + ' ' + (${s.vestavena} ? #{generovat.vestavena} : #{generovat.vlastni})"></option>
+                <option th:each="s : ${sablony}" th:value="${s.sablona.id}"
+                        th:attr="data-ma-polozky=${s.maPolozky}"
+                        th:text="${s.sablona.nazev} + ' ' + (${s.sablona.vestavena} ? #{generovat.vestavena} : #{generovat.vlastni})"></option>
             </select>
 
             <div class="label-radek">
@@ -49,6 +50,29 @@
                 <option value="PDF" th:text="#{generovat.format.pdf}">PDF</option>
             </select>
 
+            <fieldset id="sekcePolozky" hidden disabled th:object="${formular}">
+                <legend th:text="#{generovat.faktura.nadpis}">Údaje faktury</legend>
+
+                <label for="cisloFaktury" th:text="#{generovat.faktura.cislo}">Číslo faktury</label>
+                <input type="text" th:field="*{cisloFaktury}" maxlength="50" />
+
+                <label for="splatnostDny" th:text="#{generovat.faktura.splatnost}">Splatnost ve dnech</label>
+                <input type="number" th:field="*{splatnostDny}" min="0" step="1" />
+
+                <table id="tabulkaPolozek">
+                    <thead>
+                        <tr>
+                            <th th:text="#{generovat.faktura.nazev}">Název</th>
+                            <th th:text="#{generovat.faktura.mnozstvi}">Množství</th>
+                            <th th:text="#{generovat.faktura.cena}">Cena za jednotku</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody id="teloTabulkyPolozek"></tbody>
+                </table>
+                <button type="button" id="tlacitkoPridatRadek" th:text="#{generovat.faktura.pridat_radek}">+ Přidat řádek</button>
+            </fieldset>
+
             <div class="akce">
                 <button type="submit" th:text="#{generovat.generovat_stahnout}">Vygenerovat a stáhnout</button>
                 <button type="button" id="tlacitkoNahled" th:text="#{generovat.nahled}">Náhled</button>
@@ -57,6 +81,15 @@
             </div>
         </form>
     </div>
+
+    <template id="sablonaRadkuPolozky">
+        <tr class="radek-polozky">
+            <td><input type="text" class="pole-nazev" maxlength="200" /></td>
+            <td><input type="number" class="pole-mnozstvi" min="0" step="0.01" /></td>
+            <td><input type="number" class="pole-cena" min="0" step="0.01" /></td>
+            <td><button type="button" class="tlacitko-odebrat-radek" th:text="#{generovat.faktura.odebrat_radek}">Odebrat</button></td>
+        </tr>
+    </template>
 
     <script th:inline="javascript">
         var urlNahledu = /*[[@{/generovat/{id}/nahled(id=${klient.id})}]]*/ '';
@@ -85,5 +118,6 @@
     <script th:src="@{/napoveda.js}"></script>
     <script th:src="@{/jazyky.js}"></script>
     <script th:src="@{/potvrzeni.js}"></script>
+    <script th:src="@{/generovat.js}"></script>
 </body>
 </html>

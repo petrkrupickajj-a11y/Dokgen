@@ -8,13 +8,16 @@ import cz.petrk.dokgen.repository.KlientRepository;
 import cz.petrk.dokgen.service.DocumentGeneratorService;
 import cz.petrk.dokgen.service.HistorieService;
 import cz.petrk.dokgen.service.PdfExportService;
+import cz.petrk.dokgen.service.PolozkyVypocetService;
 import cz.petrk.dokgen.service.VygenerovanyDokumentUlozisteService;
 import cz.petrk.dokgen.service.VysledekGenerovani;
 import cz.petrk.dokgen.util.DodavatelData;
 import cz.petrk.dokgen.util.KlientData;
 import cz.petrk.dokgen.util.NazevSouboru;
 import cz.petrk.dokgen.util.Vyhledani;
+import cz.petrk.dokgen.web.FakturaForm;
 import cz.petrk.dokgen.web.NeplatnyVstupException;
+import cz.petrk.dokgen.web.PolozkaForm;
 import jakarta.validation.Valid;
 import org.springframework.context.MessageSource;
 import org.springframework.context.i18n.LocaleContextHolder;
@@ -38,8 +41,9 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
-import java.util.List;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
@@ -62,6 +66,7 @@ public class KlientController {
     private final HistorieService historieService;
     private final VygenerovanyDokumentUlozisteService vygenerovanyDokumentUloziste;
     private final DodavatelProperties dodavatelProperties;
+    private final PolozkyVypocetService polozkyVypocetService;
     private final MessageSource zpravy;
 
     public KlientController(KlientRepository klientRepository,
@@ -70,6 +75,7 @@ public class KlientController {
                              HistorieService historieService,
                              VygenerovanyDokumentUlozisteService vygenerovanyDokumentUloziste,
                              DodavatelProperties dodavatelProperties,
+                             PolozkyVypocetService polozkyVypocetService,
                              MessageSource zpravy) {
         this.klientRepository = klientRepository;
         this.documentGeneratorService = documentGeneratorService;
@@ -77,6 +83,7 @@ public class KlientController {
         this.historieService = historieService;
         this.vygenerovanyDokumentUloziste = vygenerovanyDokumentUloziste;
         this.dodavatelProperties = dodavatelProperties;
+        this.polozkyVypocetService = polozkyVypocetService;
         this.zpravy = zpravy;
     }
 
@@ -84,22 +91,40 @@ public class KlientController {
         return zpravy.getMessage(kod, args, LocaleContextHolder.getLocale());
     }
 
-    // Datum vygenerovani patri do kontextu kazdeho dokumentu (${datum} pouzivaji
-    // vsechny vestavene sablony), bez ohledu na to, jestli sablona ma i polozky.
-    private Map<String, String> sestavKontext(Klient klient) {
-        return sestavKontext(klient, VYCHOZI_SPLATNOST_DNY);
-    }
+    // Vygeneruje dokument pro klienta - spocita castky polozek (i kdyz je
+    // sablona nepouziva, prazdny seznam nevadi) a sestavi z nich spolecne
+    // s udaji klienta, dodavatele a datumy kompletni kontext placeholderu.
+    private VysledekGenerovani vygenerujProKlienta(Long sablonaId, Klient klient, FakturaForm formular) throws IOException {
+        PolozkyVypocetService.Vysledek vypocet = polozkyVypocetService.spocti(prevedNaVstupVypoctu(formular.getPolozky()));
 
-    // ${splatnost} pocitame vzdy (i pro sablony bez tohoto placeholderu - tam
-    // se prosto nepouzije), aby nebylo potreba rozlisovat, jestli vybrana
-    // sablona polozky/splatnost pouziva - to resi az samotna sablona.
-    private Map<String, String> sestavKontext(Klient klient, int splatnostDny) {
+        int splatnostDny = formular.getSplatnostDny() != null ? formular.getSplatnostDny() : VYCHOZI_SPLATNOST_DNY;
         Map<String, String> kontext = new LinkedHashMap<>(KlientData.sestavKontext(klient));
         kontext.putAll(DodavatelData.sestavKontext(dodavatelProperties));
         LocalDate dnesniDatum = LocalDate.now();
         kontext.put("datum", dnesniDatum.format(FORMAT_DATA));
         kontext.put("splatnost", dnesniDatum.plusDays(splatnostDny).format(FORMAT_DATA));
-        return kontext;
+        kontext.put("cisloFaktury", nullSafe(formular.getCisloFaktury()));
+        kontext.put("variabilniSymbol", vypocitejVariabilniSymbol(formular.getCisloFaktury()));
+        kontext.put("celkem", vypocet.celkem());
+
+        return documentGeneratorService.vygenerujDokument(sablonaId, kontext, vypocet.polozky());
+    }
+
+    private List<PolozkyVypocetService.PolozkaVstup> prevedNaVstupVypoctu(List<PolozkaForm> polozky) {
+        return polozky.stream()
+                .map(p -> new PolozkyVypocetService.PolozkaVstup(p.getNazev(), p.getMnozstvi(), p.getCena()))
+                .toList();
+    }
+
+    // Variabilni symbol se samostatne nezada - je to konstantni firemni udaj
+    // v praxi odvozeny primo od cisla faktury (jen jeho cislice), takze pro
+    // nej neni potreba dalsi pole ve formulari.
+    private String vypocitejVariabilniSymbol(String cisloFaktury) {
+        return cisloFaktury == null ? "" : cisloFaktury.replaceAll("\\D", "");
+    }
+
+    private String nullSafe(String hodnota) {
+        return hodnota == null ? "" : hodnota;
     }
 
     // Uvodni stranka - seznam klientu, volitelne zuzeny hledanim (jmeno,
@@ -172,11 +197,26 @@ public class KlientController {
 
     // Stranka s vyberem sablony pro konkretniho klienta
     @GetMapping("/generovat/{id}")
-    public String vyberSablony(@PathVariable Long id, Model model) {
+    public String vyberSablony(@PathVariable Long id, Model model) throws IOException {
         Klient klient = Vyhledani.najdiNeboVyhod(klientRepository.findById(id), zprava("chyba.klient.neexistuje", id));
         model.addAttribute("klient", klient);
-        model.addAttribute("sablony", documentGeneratorService.getDostupneSablony());
+        model.addAttribute("sablony", sestavNabidkuSablon());
+        model.addAttribute("formular", new FakturaForm());
         return "generovat";
+    }
+
+    // Pro kazdou dostupnou sablonu zjisti, jestli pouziva konvenci opakovani
+    // radku (${polozka.) - podle toho generovat.html JS-em zobrazi/skryje
+    // sekci s polozkami faktury (viz sablonaObsahujePolozky).
+    private List<SablonaVolba> sestavNabidkuSablon() throws IOException {
+        List<SablonaVolba> nabidka = new ArrayList<>();
+        for (Sablona sablona : documentGeneratorService.getDostupneSablony()) {
+            nabidka.add(new SablonaVolba(sablona, documentGeneratorService.sablonaObsahujePolozky(sablona)));
+        }
+        return nabidka;
+    }
+
+    public record SablonaVolba(Sablona sablona, boolean maPolozky) {
     }
 
     // Samotne vygenerovani a stazeni dokumentu (Word nebo PDF). Neplatny klient/sablona
@@ -187,6 +227,7 @@ public class KlientController {
     public Object generujDokument(@PathVariable Long id,
                                    @RequestParam Long sablonaId,
                                    @RequestParam(defaultValue = "WORD") String format,
+                                   @ModelAttribute FakturaForm formular,
                                    RedirectAttributes redirectAttributes) throws IOException {
         String formatOvereny = overFormat(format);
 
@@ -194,7 +235,7 @@ public class KlientController {
         VysledekGenerovani vysledek;
         try {
             klient = Vyhledani.najdiNeboVyhod(klientRepository.findById(id), zprava("chyba.klient.neexistuje", id));
-            vysledek = documentGeneratorService.vygenerujDokument(sablonaId, sestavKontext(klient), List.of());
+            vysledek = vygenerujProKlienta(sablonaId, klient, formular);
         } catch (IllegalArgumentException e) {
             redirectAttributes.addFlashAttribute("chybaGenerovani", e.getMessage());
             return "redirect:/generovat/" + id;
@@ -251,7 +292,7 @@ public class KlientController {
                                                    @RequestParam Long sablonaId) throws IOException {
         Klient klient = Vyhledani.najdiNeboVyhod(klientRepository.findById(id), zprava("chyba.klient.neexistuje", id));
 
-        VysledekGenerovani vysledek = documentGeneratorService.vygenerujDokument(sablonaId, sestavKontext(klient), List.of());
+        VysledekGenerovani vysledek = vygenerujProKlienta(sablonaId, klient, new FakturaForm());
         byte[] pdf = pdfExportService.prevedNaPdf(vysledek.obsah());
 
         String nazevSouboru = NazevSouboru.ocisti(vysledek.sablona().getNazev()) + ".pdf";
